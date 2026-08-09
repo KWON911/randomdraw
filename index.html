@@ -174,6 +174,11 @@
                             <button type="button" data-gender="M" class="gender-toggle-btn w-12 rounded-xl font-bold text-sm bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 transition-colors">남</button>
                             <button type="button" data-gender="F" class="gender-toggle-btn w-12 rounded-xl font-bold text-sm bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 transition-colors">여</button>
                         </div>
+                        <div class="flex gap-1 shrink-0">
+                            <button type="button" data-ability="상" class="ability-toggle-btn w-8 rounded-xl font-bold text-[10px] bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 transition-colors">상</button>
+                            <button type="button" data-ability="중" class="ability-toggle-btn w-8 rounded-xl font-bold text-[10px] bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 transition-colors">중</button>
+                            <button type="button" data-ability="하" class="ability-toggle-btn w-8 rounded-xl font-bold text-[10px] bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 transition-colors">하</button>
+                        </div>
                         <button type="submit" class="bg-theme text-white w-16 rounded-xl flex items-center justify-center transition-transform hover:scale-105 active:scale-95 shadow-md shrink-0">
                             <i class="fa-solid fa-plus text-xl"></i>
                         </button>
@@ -422,6 +427,7 @@
             importMergeBtn: document.getElementById('import-merge-btn'),
             importCancelBtn: document.getElementById('import-cancel-btn'),
             genderToggleBtns: document.querySelectorAll('.gender-toggle-btn'),
+            abilityToggleBtns: document.querySelectorAll('.ability-toggle-btn'),
             genderModeSelect: document.getElementById('gender-mode-select'),
             confirmModal: document.getElementById('confirm-modal'),
             confirmModalTitle: document.getElementById('confirm-modal-title'),
@@ -778,6 +784,29 @@
             });
         };
 
+        let selectedAbility = null;
+        dom.abilityToggleBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const a = btn.dataset.ability;
+                selectedAbility = selectedAbility === a ? null : a;
+                dom.abilityToggleBtns.forEach(b => {
+                    const active = b.dataset.ability === selectedAbility;
+                    const activeClasses = ['bg-theme', 'text-white'];
+                    const idleClasses = ['bg-slate-50', 'dark:bg-slate-800', 'text-slate-400', 'dark:text-slate-500'];
+                    b.classList.remove(...activeClasses, ...idleClasses);
+                    b.classList.add(...(active ? activeClasses : idleClasses));
+                });
+            });
+        });
+
+        const resetAbilityToggle = () => {
+            selectedAbility = null;
+            dom.abilityToggleBtns.forEach(b => {
+                b.classList.remove('bg-theme', 'text-white');
+                b.classList.add('bg-slate-50', 'dark:bg-slate-800', 'text-slate-400', 'dark:text-slate-500');
+            });
+        };
+
         dom.form.addEventListener('submit', (e) => {
             e.preventDefault();
             initAudio();
@@ -787,10 +816,11 @@
                 showToast('이미 명단에 있는 이름입니다.', 'error');
                 return;
             }
-            state.participants.push({ name, gender: selectedGender, ability: null });
+            state.participants.push({ name, gender: selectedGender, ability: selectedAbility });
             saveState('participants');
             dom.input.value = '';
             resetGenderToggle();
+            resetAbilityToggle();
             renderParticipants();
             playSound('click');
         });
