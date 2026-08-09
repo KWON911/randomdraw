@@ -1315,12 +1315,12 @@
                 return `<div class="team-row h-full min-h-0 grid gap-4" style="grid-template-columns: repeat(${rowTeams.length}, minmax(0, 1fr));">${cardsHtml}</div>`;
             }).join('');
 
-            // 레이아웃이 실제로 잡힌 다음 프레임에 측정해야 카드 높이가 정확하다
+            // 레이아웃이 실제로 잡힌 다음 프레임에 측정해야 카드 높이가 정확하다.
+            // 카드마다 배치(열 수)가 달라 여백도 다르므로, 전체를 하나의 크기로 맞추지 않고
+            // 카드마다 각자 스크롤 없이 꽉 차는 최대 크기를 독립적으로 찾는다.
             requestAnimationFrame(() => {
                 const memberLists = [...dom.resultTeams.querySelectorAll('.team-members')];
-                if (memberLists.length === 0) return;
-                const bestSize = Math.min(...memberLists.map(el => fitTextToBox(el)));
-                memberLists.forEach(el => { el.style.fontSize = bestSize + 'px'; });
+                memberLists.forEach(el => fitTextToBox(el));
             });
 
             dom.closeModal.style.display = 'flex';
