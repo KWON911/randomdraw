@@ -1364,18 +1364,34 @@
             filtered.slice(0, 50).forEach(record => {
                 const li = document.createElement('li');
                 li.className = 'flex justify-between items-center bg-white dark:bg-slate-800 p-3 border border-slate-100 dark:border-slate-700 rounded-xl shadow-sm';
-                li.innerHTML = `
-                    <div class="flex items-center gap-3 overflow-hidden">
-                        <div class="w-10 h-10 rounded-full bg-theme/10 text-theme flex items-center justify-center shrink-0"><i class="fa-solid fa-trophy"></i></div>
-                        <div class="truncate">
-                            <p class="font-bold text-slate-700 dark:text-slate-200 text-base truncate">${record.name}</p>
-                            <p class="text-xs text-slate-400">${record.date}</p>
+
+                if (record.type === 'team') {
+                    li.innerHTML = `
+                        <div class="flex items-center gap-3 overflow-hidden cursor-pointer" onclick="reopenTeamResult(${record.id})">
+                            <div class="w-10 h-10 rounded-full bg-theme/10 text-theme flex items-center justify-center shrink-0"><i class="fa-solid fa-people-group"></i></div>
+                            <div class="truncate">
+                                <p class="font-bold text-slate-700 dark:text-slate-200 text-base truncate">${record.teamCount}팀 배분 완료</p>
+                                <p class="text-xs text-slate-400">${record.date}</p>
+                            </div>
                         </div>
-                    </div>
-                    <button onclick="removeHistoryRecord(${record.id})" class="text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 w-8 h-8 rounded-full flex items-center justify-center transition-colors shrink-0" title="기록 삭제">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
-                `;
+                        <button onclick="removeHistoryRecord(${record.id})" class="text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 w-8 h-8 rounded-full flex items-center justify-center transition-colors shrink-0" title="기록 삭제">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    `;
+                } else {
+                    li.innerHTML = `
+                        <div class="flex items-center gap-3 overflow-hidden">
+                            <div class="w-10 h-10 rounded-full bg-theme/10 text-theme flex items-center justify-center shrink-0"><i class="fa-solid fa-trophy"></i></div>
+                            <div class="truncate">
+                                <p class="font-bold text-slate-700 dark:text-slate-200 text-base truncate">${record.name}</p>
+                                <p class="text-xs text-slate-400">${record.date}</p>
+                            </div>
+                        </div>
+                        <button onclick="removeHistoryRecord(${record.id})" class="text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 w-8 h-8 rounded-full flex items-center justify-center transition-colors shrink-0" title="기록 삭제">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    `;
+                }
                 dom.historyList.appendChild(li);
             });
         };
@@ -1402,6 +1418,14 @@
                     showToast(`'${restored.name}' 님이 명단으로 복원되었습니다.`, 'success');
                 }
             }
+        };
+
+        window.reopenTeamResult = (id) => {
+            const record = state.history.find(r => r.id === id && r.type === 'team');
+            if (!record) return;
+            lastTeamResult = record.teams;
+            dom.continueDraw.style.display = 'none';
+            renderTeamResultOverlay(record.teams);
         };
 
         // --- 9. 폭죽 (Confetti) 효과 ---
