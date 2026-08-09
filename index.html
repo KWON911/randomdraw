@@ -381,7 +381,7 @@
 
             <div id="result-name" class="px-2 text-7xl sm:text-7xl md:text-9xl lg:text-[10rem] font-black text-white text-center break-keep tracking-widest drop-shadow-[0_0_50px_rgba(255,255,255,0.3)]"></div>
 
-            <div id="result-teams" class="hidden w-full max-w-7xl px-4 sm:px-8 flex flex-wrap justify-center gap-6"></div>
+            <div id="result-teams" class="hidden w-full flex-1 min-h-0 grid gap-4 px-4 sm:px-8 pb-2"></div>
         </div>
 
         <div class="shrink-0 mb-8 sm:mb-16 flex flex-row flex-wrap justify-center gap-2 sm:gap-4 px-6 sm:px-0">
@@ -1257,18 +1257,48 @@
 
         let lastTeamResult = null; // 마지막으로 그린 팀 배분 결과 (CSV 내보내기/재열람용)
 
+        // 카드 안 이름 목록이 스크롤 없이 꽉 차도록 글씨 크기를 점점 줄여가며 맞춘다
+        const fitTextToBox = (el, { max = 64, min = 14, step = 2 } = {}) => {
+            let size = max;
+            el.style.fontSize = size + 'px';
+            while (size > min && (el.scrollHeight > el.clientHeight + 1 || el.scrollWidth > el.clientWidth + 1)) {
+                size -= step;
+                el.style.fontSize = size + 'px';
+            }
+            return size;
+        };
+
         const renderTeamResultOverlay = (teams, { allowContinue = true } = {}) => {
             dom.resultName.style.display = 'none';
             dom.resultTitle.style.display = 'none';
             dom.resultTeams.classList.remove('hidden');
-            dom.resultTeams.innerHTML = teams.map(team => `
-                <div class="bg-white/10 backdrop-blur rounded-2xl p-6 sm:p-8 text-center w-full sm:w-80 lg:w-96">
-                    <p class="text-white font-black text-2xl sm:text-3xl mb-4">${team.name}</p>
-                    <ul class="space-y-3">
-                        ${team.members.map(name => `<li class="text-white/90 font-bold text-3xl sm:text-4xl">${name}</li>`).join('')}
-                    </ul>
-                </div>
-            `).join('');
+
+            // 팀 카드 배치를 팀 수에 맞춰 정사각형에 가깝게 배열해 공간을 최대한 채운다
+            const cardCols = Math.max(1, Math.ceil(Math.sqrt(teams.length)));
+            dom.resultTeams.style.gridTemplateColumns = `repeat(${cardCols}, minmax(0, 1fr))`;
+            dom.resultTeams.style.gridAutoRows = '1fr';
+
+            dom.resultTeams.innerHTML = teams.map(team => {
+                const memberCount = team.members.length;
+                // 인원이 많은 팀은 이름을 여러 열로 나눠 세로로 길어지지 않게 한다
+                const nameCols = memberCount <= 6 ? 1 : memberCount <= 12 ? 2 : memberCount <= 20 ? 3 : 4;
+                return `
+                    <div class="team-card h-full min-h-0 bg-white/10 backdrop-blur rounded-2xl p-4 sm:p-6 flex flex-col overflow-hidden">
+                        <p class="text-white font-black text-2xl sm:text-3xl mb-3 text-center shrink-0">${team.name}</p>
+                        <ul class="team-members flex-1 min-h-0 text-white/90 font-bold text-center" style="column-count:${nameCols}; column-gap:1.5rem;">
+                            ${team.members.map(name => `<li class="break-keep mb-2">${name}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }).join('');
+
+            // 레이아웃이 실제로 잡힌 다음 프레임에 측정해야 카드 높이가 정확하다
+            requestAnimationFrame(() => {
+                const memberLists = [...dom.resultTeams.querySelectorAll('.team-members')];
+                if (memberLists.length === 0) return;
+                const bestSize = Math.min(...memberLists.map(el => fitTextToBox(el)));
+                memberLists.forEach(el => { el.style.fontSize = bestSize + 'px'; });
+            });
 
             dom.closeModal.style.display = 'flex';
             dom.continueDraw.style.display = allowContinue ? 'flex' : 'none';
