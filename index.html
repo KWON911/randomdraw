@@ -374,17 +374,22 @@
 
     <!-- 뽑기 결과 모달 (전체화면 덮기) -->
     <div id="result-overlay" class="fixed inset-0 bg-slate-900/90 backdrop-blur-lg z-[96] hidden flex flex-col items-center opacity-0 transition-opacity duration-500">
-        <div class="flex-1 w-full flex flex-col items-center justify-center min-h-0">
+        <div class="flex-1 w-full flex flex-col items-center justify-center min-h-0 overflow-y-auto">
             <div id="result-title" class="text-theme font-bold mb-8 text-3xl tracking-widest hidden bg-white px-8 py-3 rounded-full shadow-2xl border-4 border-theme transform -translate-y-10">
                 <i class="fa-solid fa-crown text-yellow-500 mr-3"></i>당첨
             </div>
 
             <div id="result-name" class="px-2 text-7xl sm:text-7xl md:text-9xl lg:text-[10rem] font-black text-white text-center break-keep tracking-widest drop-shadow-[0_0_50px_rgba(255,255,255,0.3)]"></div>
+
+            <div id="result-teams" class="hidden w-full max-w-5xl px-4 sm:px-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
         </div>
 
-        <div class="shrink-0 mb-8 sm:mb-16 flex flex-row gap-2 sm:gap-4 px-6 sm:px-0">
+        <div class="shrink-0 mb-8 sm:mb-16 flex flex-row flex-wrap justify-center gap-2 sm:gap-4 px-6 sm:px-0">
             <button id="continue-draw" class="justify-center text-white bg-theme hover:bg-[var(--theme-primary-hover)] border-2 border-transparent rounded-full px-4 py-2 sm:px-10 sm:py-4 font-bold text-sm sm:text-xl transition-all duration-300 hidden items-center gap-2 sm:gap-3 shadow-2xl hover:scale-105 active:scale-95">
                 <i class="fa-solid fa-rotate-right"></i> 계속
+            </button>
+            <button id="export-team-csv" class="hidden justify-center items-center gap-2 sm:gap-3 text-white bg-white/10 hover:bg-theme border-2 border-white/30 hover:border-transparent rounded-full px-4 py-2 sm:px-8 sm:py-4 font-bold text-sm sm:text-lg transition-all duration-300 shadow-2xl hover:scale-105 active:scale-95">
+                <i class="fa-solid fa-file-export"></i> CSV 내보내기
             </button>
             <button id="close-modal" class="justify-center text-white bg-white/10 hover:bg-theme border-2 border-white/30 hover:border-transparent rounded-full px-4 py-2 sm:px-10 sm:py-4 font-bold text-sm sm:text-xl transition-all duration-300 hidden items-center gap-2 sm:gap-3 shadow-2xl hover:scale-105 active:scale-95">
                 <i class="fa-solid fa-check"></i> 확인완료
@@ -489,6 +494,8 @@
             resultTitle: document.getElementById('result-title'),
             closeModal: document.getElementById('close-modal'),
             continueDraw: document.getElementById('continue-draw'),
+            resultTeams: document.getElementById('result-teams'),
+            exportTeamCsv: document.getElementById('export-team-csv'),
             toastContainer: document.getElementById('toast-container'),
             confettiCanvas: document.getElementById('confetti-canvas'),
             
@@ -1172,6 +1179,9 @@
             isRolling = true;
 
             // UI 셋업
+            dom.resultName.style.display = '';
+            dom.resultTeams.classList.add('hidden');
+            dom.exportTeamCsv.style.display = 'none';
             dom.resultTitle.style.display = 'none';
             dom.closeModal.style.display = 'none';
             dom.continueDraw.style.display = 'none';
@@ -1236,11 +1246,87 @@
             }, rollDuration);
         };
 
-        dom.drawBtn.addEventListener('click', runDraw);
+        let lastTeamResult = null; // 마지막으로 그린 팀 배분 결과 (CSV 내보내기/재열람용)
+
+        const renderTeamResultOverlay = (teams) => {
+            dom.resultName.style.display = 'none';
+            dom.resultTitle.style.display = 'none';
+            dom.resultTeams.classList.remove('hidden');
+            dom.resultTeams.innerHTML = teams.map(team => `
+                <div class="bg-white/10 backdrop-blur rounded-2xl p-5 text-left">
+                    <p class="text-white font-black text-xl mb-3">${team.name}</p>
+                    <ul class="space-y-1">
+                        ${team.members.map(name => `<li class="text-white/90 font-semibold text-base">${name}</li>`).join('')}
+                    </ul>
+                </div>
+            `).join('');
+
+            dom.closeModal.style.display = 'flex';
+            dom.continueDraw.style.display = 'none';
+            dom.exportTeamCsv.style.display = 'flex';
+
+            dom.resultOverlay.classList.remove('hidden');
+            setTimeout(() => dom.resultOverlay.classList.remove('opacity-0'), 10);
+        };
+
+        const isTeamMode = () => state.settings.genderMode === 'team';
+
+        const runTeamDraw = () => {
+            if (state.participants.length < 1 || isRolling) return;
+
+            const ts = state.settings.teamSettings;
+            const rawCount = TeamDrawLogic.resolveTeamCount(ts, state.participants.length);
+
+            if (rawCount < 2 || rawCount > state.participants.length) {
+                showToast('참가자 수보다 팀이 많을 수 없습니다.', 'error');
+                return;
+            }
+
+            initAudio();
+
+            const teams = TeamDrawLogic.distributeTeams(state.participants, rawCount, {
+                balanceGender: ts.balanceGender,
+                balanceAbility: ts.balanceAbility
+            });
+            lastTeamResult = teams;
+
+            const now = new Date();
+            state.history.unshift({ id: Date.now(), type: 'team', teamCount: teams.length, date: now.toLocaleString(), dayKey: toDayKey(now), teams });
+            saveState('history');
+            renderHistoryList();
+
+            renderTeamResultOverlay(teams);
+            playSound('success');
+            fireConfetti();
+        };
+
+        dom.exportTeamCsv.addEventListener('click', () => {
+            if (!lastTeamResult) return;
+            const lines = ['팀,이름'];
+            lastTeamResult.forEach(team => {
+                team.members.forEach(name => lines.push(`${team.name},${csvField(name)}`));
+            });
+            const csvContent = '﻿' + lines.join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `팀배분_${today}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('팀 배분 결과를 내보냈습니다.', 'success');
+        });
+
+        dom.drawBtn.addEventListener('click', () => {
+            if (isTeamMode()) runTeamDraw();
+            else runDraw();
+        });
 
         dom.continueDraw.addEventListener('click', () => {
             playSound('click');
-            runDraw();
+            if (isTeamMode()) runTeamDraw();
+            else runDraw();
         });
 
         dom.closeModal.addEventListener('click', () => {
