@@ -396,6 +396,7 @@
     <canvas id="confetti-canvas"></canvas>
 
     <!-- 앱 로직 -->
+    <script src="team-draw-logic.js"></script>
     <script>
         // --- 1. DOM 요소 캐싱 ---
         const dom = {
@@ -465,13 +466,23 @@
             animSpeed: 1,
             soundOn: true,
             excludeMode: false,
-            genderMode: 'all'
+            genderMode: 'all',
+            teamSettings: {
+                splitBy: 'count',
+                teamCount: 4,
+                teamSize: 4,
+                balanceGender: false,
+                balanceAbility: false
+            }
         };
 
-        // 이전 버전(문자열 배열)으로 저장된 명단을 {name, gender} 객체 배열로 변환
+        // 이전 버전(문자열 배열 / ability 없는 객체)으로 저장된 명단을 {name, gender, ability} 객체 배열로 변환
         const migrateParticipants = (raw) => {
             if (!Array.isArray(raw)) return [];
-            return raw.map(p => typeof p === 'string' ? { name: p, gender: null } : p);
+            return raw.map(p => {
+                const obj = typeof p === 'string' ? { name: p, gender: null } : p;
+                return { ability: null, ...obj };
+            });
         };
 
         // 날짜별 기록 필터링을 위한 로컬 날짜 키 (YYYY-MM-DD)
@@ -776,7 +787,7 @@
                 showToast('이미 명단에 있는 이름입니다.', 'error');
                 return;
             }
-            state.participants.push({ name, gender: selectedGender });
+            state.participants.push({ name, gender: selectedGender, ability: null });
             saveState('participants');
             dom.input.value = '';
             resetGenderToggle();
