@@ -1262,10 +1262,10 @@
             dom.resultTitle.style.display = 'none';
             dom.resultTeams.classList.remove('hidden');
             dom.resultTeams.innerHTML = teams.map(team => `
-                <div class="bg-white/10 backdrop-blur rounded-2xl p-6 sm:p-8 text-center w-full sm:w-72 lg:w-80">
+                <div class="bg-white/10 backdrop-blur rounded-2xl p-6 sm:p-8 text-center w-full sm:w-80 lg:w-96">
                     <p class="text-white font-black text-2xl sm:text-3xl mb-4">${team.name}</p>
-                    <ul class="space-y-2">
-                        ${team.members.map(name => `<li class="text-white/90 font-bold text-xl sm:text-2xl">${name}</li>`).join('')}
+                    <ul class="space-y-3">
+                        ${team.members.map(name => `<li class="text-white/90 font-bold text-3xl sm:text-4xl">${name}</li>`).join('')}
                     </ul>
                 </div>
             `).join('');
