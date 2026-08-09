@@ -233,8 +233,26 @@
                             <option value="M">남자만</option>
                             <option value="F">여자만</option>
                             <option value="alternate">번갈아가며</option>
+                            <option value="team">팀 나누기</option>
                         </select>
                     </div>
+                </div>
+                <div id="team-settings-panel" class="hidden mb-4 p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-700 space-y-3">
+                    <div class="flex items-center gap-2">
+                        <div class="flex gap-1 shrink-0">
+                            <button type="button" data-split="count" class="team-split-toggle-btn px-3 py-1.5 rounded-lg font-bold text-xs transition-colors">팀 개수로</button>
+                            <button type="button" data-split="size" class="team-split-toggle-btn px-3 py-1.5 rounded-lg font-bold text-xs transition-colors">팀당 인원으로</button>
+                        </div>
+                        <input type="number" id="team-number-input" min="2" class="flex-1 min-w-0 px-3 py-1.5 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus-ring-theme text-slate-700 dark:text-slate-200">
+                    </div>
+                    <label class="flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300 cursor-pointer select-none">
+                        <input type="checkbox" id="balance-gender-check" class="w-4 h-4 accent-theme-primary rounded">
+                        성별 균형 배분
+                    </label>
+                    <label class="flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300 cursor-pointer select-none">
+                        <input type="checkbox" id="balance-ability-check" class="w-4 h-4 accent-theme-primary rounded">
+                        신체능력 균형 배분
+                    </label>
                 </div>
                 <button id="draw-btn" disabled class="w-full h-20 bg-theme-gradient text-white text-2xl font-black rounded-2xl shadow-xl hover:shadow-2xl hover:shadow-theme/30 transform transition-all hover:-translate-y-1 active:translate-y-0 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-4 tracking-widest overflow-hidden relative group">
                     <div class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
@@ -450,6 +468,11 @@
             genderToggleBtns: document.querySelectorAll('.gender-toggle-btn'),
             abilityToggleBtns: document.querySelectorAll('.ability-toggle-btn'),
             genderModeSelect: document.getElementById('gender-mode-select'),
+            teamSettingsPanel: document.getElementById('team-settings-panel'),
+            teamSplitToggleBtns: document.querySelectorAll('.team-split-toggle-btn'),
+            teamNumberInput: document.getElementById('team-number-input'),
+            balanceGenderCheck: document.getElementById('balance-gender-check'),
+            balanceAbilityCheck: document.getElementById('balance-ability-check'),
             confirmModal: document.getElementById('confirm-modal'),
             confirmModalTitle: document.getElementById('confirm-modal-title'),
             confirmModalDesc: document.getElementById('confirm-modal-desc'),
@@ -655,6 +678,24 @@
             dom.soundToggle.checked = s.soundOn;
             dom.toggleExclude.checked = s.excludeMode;
             dom.genderModeSelect.value = s.genderMode;
+
+            // 팀 나누기 UI 동기화
+            const teamModeActive = s.genderMode === 'team';
+            dom.teamSettingsPanel.classList.toggle('hidden', !teamModeActive);
+            dom.drawBtn.querySelector('span').textContent = teamModeActive ? '팀 나누기 시작!' : '운명의 뽑기 시작!';
+            dom.toggleExclude.disabled = teamModeActive;
+            dom.teamSplitToggleBtns.forEach(b => {
+                const active = b.dataset.split === s.teamSettings.splitBy;
+                b.classList.toggle('bg-theme', active);
+                b.classList.toggle('text-white', active);
+                b.classList.toggle('bg-white', !active);
+                b.classList.toggle('dark:bg-slate-800', !active);
+                b.classList.toggle('text-slate-400', !active);
+                b.classList.toggle('dark:text-slate-500', !active);
+            });
+            dom.teamNumberInput.value = s.teamSettings.splitBy === 'size' ? s.teamSettings.teamSize : s.teamSettings.teamCount;
+            dom.balanceGenderCheck.checked = s.teamSettings.balanceGender;
+            dom.balanceAbilityCheck.checked = s.teamSettings.balanceAbility;
         };
 
         const updateSetting = (key, value) => {
@@ -675,6 +716,25 @@
         dom.soundToggle.addEventListener('change', (e) => updateSetting('soundOn', e.target.checked));
         dom.toggleExclude.addEventListener('change', (e) => updateSetting('excludeMode', e.target.checked));
         dom.genderModeSelect.addEventListener('change', (e) => updateSetting('genderMode', e.target.value));
+
+        const updateTeamSetting = (key, value) => {
+            state.settings.teamSettings[key] = value;
+            saveState('settings');
+            applySettingsToDOM();
+        };
+
+        dom.teamSplitToggleBtns.forEach(btn => {
+            btn.addEventListener('click', () => updateTeamSetting('splitBy', btn.dataset.split));
+        });
+
+        dom.teamNumberInput.addEventListener('change', (e) => {
+            const key = state.settings.teamSettings.splitBy === 'size' ? 'teamSize' : 'teamCount';
+            const clamped = TeamDrawLogic.clampTeamCount(e.target.value, state.participants.length);
+            updateTeamSetting(key, clamped);
+        });
+
+        dom.balanceGenderCheck.addEventListener('change', (e) => updateTeamSetting('balanceGender', e.target.checked));
+        dom.balanceAbilityCheck.addEventListener('change', (e) => updateTeamSetting('balanceAbility', e.target.checked));
 
         dom.resetSettings.addEventListener('click', () => {
             showConfirm('기본 설정으로 복구', '설정을 기본값으로 되돌리시겠습니까?', () => {
