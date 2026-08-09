@@ -31,8 +31,8 @@
         const max = Math.max(participantCount, 0);
         let n = Math.floor(Number(count));
         if (!Number.isFinite(n)) n = 2;
-        if (max < 2) return max;
         if (n < 2) return 2;
+        if (max < 2) return 2;
         if (n > max) return max;
         return n;
     }

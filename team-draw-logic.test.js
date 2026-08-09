@@ -34,7 +34,7 @@ test('clampTeamCount: clamps into [2, participantCount]', () => {
     assert.equal(clampTeamCount(20, 10), 10);
     assert.equal(clampTeamCount(3, 10), 3);
     assert.equal(clampTeamCount(3.9, 10), 3);
-    assert.equal(clampTeamCount(5, 1), 1);
+    assert.equal(clampTeamCount(5, 1), 2);
 });
 
 test('resolveTeamCount: count mode returns teamCount as-is', () => {

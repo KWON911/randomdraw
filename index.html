@@ -567,12 +567,21 @@
             return 'text-5xl';
         };
 
+        // DEFAULT_SETTINGS.teamSettings는 중첩 객체이므로 얕은 스프레드로는 참조가 공유된다.
+        // 항상 teamSettings를 별도로 복제해 state.settings가 DEFAULT_SETTINGS와 객체를 공유하지 않도록 한다.
+        const cloneDefaultSettings = () => ({ ...DEFAULT_SETTINGS, teamSettings: { ...DEFAULT_SETTINGS.teamSettings } });
+
         // 로컬 스토리지 데이터 로드
+        const savedSettings = JSON.parse(localStorage.getItem('pd_settings')) || {};
         let state = {
             participants: migrateParticipants(JSON.parse(localStorage.getItem('pd_participants'))),
             excluded: migrateParticipants(JSON.parse(localStorage.getItem('pd_excluded'))),
             history: JSON.parse(localStorage.getItem('pd_history')) || [],
-            settings: { ...DEFAULT_SETTINGS, ...(JSON.parse(localStorage.getItem('pd_settings')) || {}) }
+            settings: {
+                ...cloneDefaultSettings(),
+                ...savedSettings,
+                teamSettings: { ...DEFAULT_SETTINGS.teamSettings, ...(savedSettings.teamSettings || {}) }
+            }
         };
 
         const saveState = (key) => {
@@ -745,7 +754,7 @@
 
         dom.resetSettings.addEventListener('click', () => {
             showConfirm('기본 설정으로 복구', '설정을 기본값으로 되돌리시겠습니까?', () => {
-                state.settings = { ...DEFAULT_SETTINGS };
+                state.settings = cloneDefaultSettings();
                 saveState('settings');
                 applySettingsToDOM();
                 showToast('기본 설정으로 복구되었습니다.');
@@ -1248,7 +1257,7 @@
 
         let lastTeamResult = null; // 마지막으로 그린 팀 배분 결과 (CSV 내보내기/재열람용)
 
-        const renderTeamResultOverlay = (teams) => {
+        const renderTeamResultOverlay = (teams, { allowContinue = true } = {}) => {
             dom.resultName.style.display = 'none';
             dom.resultTitle.style.display = 'none';
             dom.resultTeams.classList.remove('hidden');
@@ -1262,7 +1271,7 @@
             `).join('');
 
             dom.closeModal.style.display = 'flex';
-            dom.continueDraw.style.display = 'none';
+            dom.continueDraw.style.display = allowContinue ? 'flex' : 'none';
             dom.exportTeamCsv.style.display = 'flex';
 
             dom.resultOverlay.classList.remove('hidden');
@@ -1277,7 +1286,11 @@
             const ts = state.settings.teamSettings;
             const rawCount = TeamDrawLogic.resolveTeamCount(ts, state.participants.length);
 
-            if (rawCount < 2 || rawCount > state.participants.length) {
+            if (rawCount < 2) {
+                showToast('팀은 2개 이상이어야 합니다.', 'error');
+                return;
+            }
+            if (rawCount > state.participants.length) {
                 showToast('참가자 수보다 팀이 많을 수 없습니다.', 'error');
                 return;
             }
@@ -1425,7 +1438,7 @@
             if (!record) return;
             lastTeamResult = record.teams;
             dom.continueDraw.style.display = 'none';
-            renderTeamResultOverlay(record.teams);
+            renderTeamResultOverlay(record.teams, { allowContinue: false });
         };
 
         // --- 9. 폭죽 (Confetti) 효과 ---
