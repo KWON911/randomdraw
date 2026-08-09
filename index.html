@@ -1334,7 +1334,7 @@
                     <div class="team-card h-full min-h-0 ${color.bg} backdrop-blur rounded-2xl border-2 ${color.border} p-4 sm:p-6 flex flex-col overflow-hidden">
                         <p class="text-white font-black text-2xl sm:text-3xl mb-3 text-center shrink-0">${team.name}</p>
                         <ul class="team-members flex-1 min-h-0 overflow-hidden text-white/90 font-bold text-center">
-                            ${team.members.map(name => `<li class="break-keep">${name}</li>`).join('')}
+                            ${team.members.map(name => `<li class="break-keep min-w-0 min-h-0">${name}</li>`).join('')}
                         </ul>
                     </div>
                 `;
