@@ -1281,23 +1281,25 @@
         const isTeamMode = () => state.settings.genderMode === 'team';
 
         const runTeamDraw = () => {
-            if (state.participants.length < 1 || isRolling) return;
+            // 팀 나누기는 1회성 제외 모드로 빠진 참가자도 포함한 전체 명단을 대상으로 한다.
+            const fullRoster = [...state.participants, ...state.excluded];
+            if (fullRoster.length < 1 || isRolling) return;
 
             const ts = state.settings.teamSettings;
-            const rawCount = TeamDrawLogic.resolveTeamCount(ts, state.participants.length);
+            const rawCount = TeamDrawLogic.resolveTeamCount(ts, fullRoster.length);
 
             if (rawCount < 2) {
                 showToast('팀은 2개 이상이어야 합니다.', 'error');
                 return;
             }
-            if (rawCount > state.participants.length) {
+            if (rawCount > fullRoster.length) {
                 showToast('참가자 수보다 팀이 많을 수 없습니다.', 'error');
                 return;
             }
 
             initAudio();
 
-            const teams = TeamDrawLogic.distributeTeams(state.participants, rawCount, {
+            const teams = TeamDrawLogic.distributeTeams(fullRoster, rawCount, {
                 balanceGender: ts.balanceGender,
                 balanceAbility: ts.balanceAbility
             });
