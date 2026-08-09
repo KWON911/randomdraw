@@ -898,6 +898,7 @@
             const header = rows[0].map(h => h.trim());
             const nameColIdx = header.findIndex(h => h === '성명' || h === '이름' || h.toLowerCase() === 'name');
             const genderColIdx = header.findIndex(h => h === '성별' || h.toLowerCase() === 'gender');
+            const abilityColIdx = header.findIndex(h => h === '등급' || h === '신체능력' || h.toLowerCase() === 'ability');
 
             let dataRows, colIdx;
             if (nameColIdx !== -1) {
@@ -918,7 +919,8 @@
                 if (!name || seen.has(name)) return;
                 seen.add(name);
                 const genderRaw = genderColIdx !== -1 ? (r[genderColIdx] || '').trim().toLowerCase() : '';
-                participants.push({ name, gender: GENDER_MAP[genderRaw] || null });
+                const abilityRaw = abilityColIdx !== -1 ? (r[abilityColIdx] || '') : '';
+                participants.push({ name, gender: GENDER_MAP[genderRaw] || null, ability: TeamDrawLogic.mapAbilityValue(abilityRaw) });
             });
             return participants;
         };
@@ -994,7 +996,7 @@
                 return;
             }
             const genderLabel = { M: '남', F: '여' };
-            const lines = ['성명,성별', ...state.participants.map(p => `${csvField(p.name)},${genderLabel[p.gender] || ''}`)];
+            const lines = ['성명,성별,등급', ...state.participants.map(p => `${csvField(p.name)},${genderLabel[p.gender] || ''},${p.ability || ''}`)];
             const csvContent = '﻿' + lines.join('\n');
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
