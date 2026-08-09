@@ -381,7 +381,7 @@
 
             <div id="result-name" class="px-2 text-7xl sm:text-7xl md:text-9xl lg:text-[10rem] font-black text-white text-center break-keep tracking-widest drop-shadow-[0_0_50px_rgba(255,255,255,0.3)]"></div>
 
-            <div id="result-teams" class="hidden w-full max-w-5xl px-4 sm:px-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            <div id="result-teams" class="hidden w-full max-w-7xl px-4 sm:px-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
         </div>
 
         <div class="shrink-0 mb-8 sm:mb-16 flex flex-row flex-wrap justify-center gap-2 sm:gap-4 px-6 sm:px-0">
@@ -1262,10 +1262,10 @@
             dom.resultTitle.style.display = 'none';
             dom.resultTeams.classList.remove('hidden');
             dom.resultTeams.innerHTML = teams.map(team => `
-                <div class="bg-white/10 backdrop-blur rounded-2xl p-5 text-left">
-                    <p class="text-white font-black text-xl mb-3">${team.name}</p>
-                    <ul class="space-y-1">
-                        ${team.members.map(name => `<li class="text-white/90 font-semibold text-base">${name}</li>`).join('')}
+                <div class="bg-white/10 backdrop-blur rounded-2xl p-6 sm:p-8 text-center">
+                    <p class="text-white font-black text-2xl sm:text-3xl mb-4">${team.name}</p>
+                    <ul class="space-y-2">
+                        ${team.members.map(name => `<li class="text-white/90 font-bold text-xl sm:text-2xl">${name}</li>`).join('')}
                     </ul>
                 </div>
             `).join('');
