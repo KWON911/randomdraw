@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>고급 발표자 뽑기 (PC Pro)</title>
+    <title>랜덤 뽑기</title>
     
     <!-- 폰트 -->
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
@@ -12,7 +12,11 @@
     <!-- 아이콘 & 라이브러리 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class'
+        };
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     
     <!-- 동적 테마 설정을 위한 CSS 변수 및 스타일 -->
@@ -67,31 +71,58 @@
         #confetti-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; }
         .sortable-ghost { opacity: 0.4; background-color: #f1f5f9; border: 2px dashed var(--theme-primary); }
         html.dark .sortable-ghost { background-color: #1e293b; }
+
+        /* 모바일 바텀시트 (1024px 미만에서만 적용, 데스크톱 레이아웃은 변경 없음) */
+        @media (max-width: 1023px) {
+            .app-shell { height: auto !important; min-height: calc(100vh - 6.5rem) !important; }
+            body.has-mobile-layout { overflow-y: auto; align-items: stretch; }
+
+            .mobile-sheet { display: none; }
+            .mobile-sheet.sheet-open {
+                display: flex !important;
+                position: fixed;
+                left: 0; right: 0; bottom: 0; top: 4vh;
+                max-height: 96vh;
+                z-index: 90;
+                border-radius: 1.5rem 1.5rem 0 0 !important;
+                box-shadow: 0 -10px 40px rgba(0,0,0,0.35);
+            }
+        }
+        .mobile-sheet-backdrop {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(15, 23, 42, 0.6);
+            z-index: 85;
+        }
+        .mobile-sheet-backdrop.open { display: block; }
     </style>
 </head>
-<body class="pattern-dots min-h-screen flex items-center justify-center p-6 overflow-hidden">
+<body class="has-mobile-layout pattern-dots min-h-screen flex items-center justify-center p-3 lg:p-6 overflow-hidden">
 
-    <!-- PC 최적화 3단 그리드 레이아웃 -->
-    <div class="w-full max-w-[1600px] h-[85vh] min-h-[700px] grid grid-cols-1 lg:grid-cols-12 gap-6 relative z-10">
+    <!-- PC 최적화 3단 그리드 레이아웃 (모바일에서는 홈 화면 + 바텀시트로 전환) -->
+    <div class="app-shell w-full max-w-[1600px] h-[85vh] min-h-[700px] grid grid-cols-1 lg:grid-cols-12 gap-6 relative lg:z-10 pb-20 lg:pb-0">
 
         <!-- ==========================================
-             [1] 왼쪽 패널: 히스토리 & 통계 
+             [1] 왼쪽 패널: 히스토리 & 통계
              ========================================== -->
-        <aside class="lg:col-span-3 bg-white dark:bg-slate-800 rounded-3xl shadow-2xl flex flex-col border border-slate-200 dark:border-slate-700 overflow-hidden transition-colors">
+        <aside id="history-panel" class="mobile-sheet lg:flex lg:col-span-3 bg-white dark:bg-slate-800 rounded-3xl shadow-2xl flex-col border border-slate-200 dark:border-slate-700 overflow-hidden transition-colors">
             <div class="p-5 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/80">
                 <h2 class="text-lg font-bold text-slate-800 dark:text-white"><i class="fa-solid fa-chart-column mr-2 text-theme"></i>히스토리 & 통계</h2>
-                <button id="clear-history" class="text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 px-2 py-1 rounded transition-colors" title="기록 전체 삭제">
-                    <i class="fa-solid fa-trash"></i>
-                </button>
+                <div class="flex items-center gap-1">
+                    <button id="clear-history" class="text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 px-2 py-1 rounded transition-colors" title="기록 전체 삭제">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                    <button class="mobile-sheet-close lg:hidden text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 w-8 h-8 rounded-full flex items-center justify-center transition-colors" title="닫기">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
             </div>
             
             <div class="flex-1 overflow-y-auto flex flex-col p-5">
-                <!-- 통계 차트 -->
-                <div class="mb-6 shrink-0">
-                    <h3 class="text-xs font-bold text-slate-400 dark:text-slate-500 mb-3 uppercase tracking-wider">Top 5 당첨자</h3>
-                    <div class="bg-slate-50 dark:bg-slate-900 rounded-xl p-3 border border-slate-100 dark:border-slate-700 h-48 relative">
-                        <canvas id="statsChart"></canvas>
-                    </div>
+                <!-- 날짜 선택 -->
+                <div class="mb-4 shrink-0">
+                    <h3 class="text-xs font-bold text-slate-400 dark:text-slate-500 mb-3 uppercase tracking-wider">날짜별 확인</h3>
+                    <input type="date" id="history-date-filter" class="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus-ring-theme text-sm text-slate-700 dark:text-slate-200">
                 </div>
 
                 <!-- 히스토리 목록 -->
@@ -108,61 +139,95 @@
              [2] 중앙 패널: 메인 뽑기 영역 
              ========================================== -->
         <main class="lg:col-span-6 bg-white dark:bg-slate-800 rounded-3xl shadow-2xl flex flex-col border border-slate-200 dark:border-slate-700 overflow-hidden transition-colors relative">
-            
+
             <!-- Hero Header -->
-            <header class="relative bg-theme-gradient p-8 text-center shrink-0 transition-all overflow-hidden">
+            <header class="relative flex-1 lg:flex-none flex flex-col items-center justify-center bg-theme-gradient p-8 text-center transition-all overflow-hidden">
                 <div class="absolute inset-0 opacity-20" style="background-image: radial-gradient(circle at 2px 2px, white 1px, transparent 0); background-size: 20px 20px;"></div>
-                <div class="mt-2 flex justify-center relative z-10">
+                <div class="flex justify-center relative z-10">
                     <div class="w-20 h-20 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center mb-4 shadow-lg ring-1 ring-white/30 transform hover:scale-105 transition-transform">
                         <i class="fa-solid fa-dice-d20 text-4xl text-white drop-shadow-md"></i>
                     </div>
                 </div>
-                <h1 class="text-3xl font-bold text-white tracking-wide relative z-10 drop-shadow-sm">오늘의 발표자</h1>
+                <h1 class="text-4xl lg:text-3xl font-bold text-white tracking-wide relative z-10 drop-shadow-sm">랜덤 뽑기</h1>
                 <p class="text-white/80 mt-2 text-sm relative z-10">긴장되는 순간, 행운의 주인공을 뽑아보세요!</p>
             </header>
 
-            <!-- Input & Toolbar -->
-            <div class="px-8 -mt-6 relative z-20 shrink-0">
-                <form id="add-form" class="bg-white dark:bg-slate-900 p-2.5 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 flex gap-2">
-                    <input type="text" id="name-input" class="flex-1 px-4 py-3 text-lg bg-slate-50 dark:bg-slate-800 rounded-xl text-slate-800 dark:text-slate-100 focus:outline-none focus-ring-theme transition-shadow placeholder-slate-400" placeholder="참가자 이름 입력 후 Enter" autocomplete="off">
-                    <button type="submit" class="bg-theme text-white w-16 rounded-xl flex items-center justify-center transition-transform hover:scale-105 active:scale-95 shadow-md">
-                        <i class="fa-solid fa-plus text-xl"></i>
+            <!-- 참가자 명단 패널 (데스크톱: main 내부에 그대로 표시 / 모바일: 바텀시트) -->
+            <div id="participant-sheet" class="mobile-sheet lg:contents bg-white dark:bg-slate-800 flex-col">
+
+                <!-- 모바일 전용 시트 헤더 -->
+                <div class="flex lg:hidden justify-between items-center p-5 border-b border-slate-100 dark:border-slate-700 shrink-0">
+                    <h2 class="text-lg font-bold text-slate-800 dark:text-white"><i class="fa-solid fa-list-ul mr-2 text-theme"></i>참가자 명단</h2>
+                    <button class="mobile-sheet-close text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 w-8 h-8 rounded-full flex items-center justify-center transition-colors" title="닫기">
+                        <i class="fa-solid fa-xmark"></i>
                     </button>
-                </form>
-            </div>
-
-            <div class="px-8 py-4 flex justify-between items-center border-b border-slate-100 dark:border-slate-700 bg-transparent shrink-0 mt-2">
-                <label class="flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300 cursor-pointer select-none group">
-                    <div class="relative">
-                        <input type="checkbox" id="toggle-exclude" class="sr-only peer">
-                        <div class="w-10 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-theme"></div>
-                    </div>
-                    <span class="group-hover:text-theme transition-colors">당첨자 1회성 제외 모드</span>
-                </label>
-                <div class="flex items-center gap-3">
-                    <button id="reset-list" class="text-xs font-semibold text-slate-400 hover:text-red-500 transition-colors"><i class="fa-solid fa-rotate-right mr-1"></i>명단 초기화</button>
-                    <span class="text-sm bg-slate-100 dark:bg-slate-700 px-3 py-1.5 rounded-lg font-bold text-slate-600 dark:text-slate-300">
-                        총 <span id="count-badge" class="text-theme text-lg">0</span>명
-                    </span>
                 </div>
-            </div>
 
-            <!-- Participant List -->
-            <div class="flex-1 overflow-y-auto p-8 relative bg-slate-50/50 dark:bg-slate-800/50">
-                <ul id="participant-list" class="grid grid-cols-1 md:grid-cols-2 gap-3 pb-4">
-                    <!-- 동적 렌더링 -->
-                </ul>
-                <div id="empty-state" class="absolute inset-0 flex flex-col items-center justify-center text-slate-400">
-                    <div class="w-24 h-24 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mb-4">
-                        <i class="fa-solid fa-user-group text-4xl opacity-50"></i>
+                <!-- Input & Toolbar -->
+                <div class="px-8 lg:-mt-6 relative z-20 shrink-0 pt-6 lg:pt-0">
+                    <form id="add-form" class="bg-white dark:bg-slate-900 p-2.5 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 flex gap-2">
+                        <input type="text" id="name-input" class="flex-1 min-w-0 px-4 py-3 text-lg bg-slate-50 dark:bg-slate-800 rounded-xl text-slate-800 dark:text-slate-100 focus:outline-none focus-ring-theme transition-shadow placeholder-slate-400" placeholder="참가자 이름 입력 후 Enter" autocomplete="off">
+                        <div class="flex gap-1 shrink-0">
+                            <button type="button" data-gender="M" class="gender-toggle-btn w-12 rounded-xl font-bold text-sm bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 transition-colors">남</button>
+                            <button type="button" data-gender="F" class="gender-toggle-btn w-12 rounded-xl font-bold text-sm bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 transition-colors">여</button>
+                        </div>
+                        <button type="submit" class="bg-theme text-white w-16 rounded-xl flex items-center justify-center transition-transform hover:scale-105 active:scale-95 shadow-md shrink-0">
+                            <i class="fa-solid fa-plus text-xl"></i>
+                        </button>
+                    </form>
+                </div>
+
+                <div class="px-8 py-4 flex flex-col lg:flex-row lg:justify-between lg:items-center gap-3 border-b border-slate-100 dark:border-slate-700 bg-transparent shrink-0 mt-2">
+                    <label class="flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300 cursor-pointer select-none group">
+                        <div class="relative">
+                            <input type="checkbox" id="toggle-exclude" class="sr-only peer">
+                            <div class="w-10 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div>
+                        </div>
+                        <span class="group-hover:text-theme transition-colors">당첨자 1회성 제외 모드</span>
+                    </label>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <input type="file" id="import-file-input" accept=".csv,.txt" class="hidden">
+                        <button id="import-list" class="text-xs font-semibold text-slate-400 hover:text-theme transition-colors" title="CSV로 명단 가져오기"><i class="fa-solid fa-file-import mr-1"></i>가져오기</button>
+                        <button id="export-list" class="text-xs font-semibold text-slate-400 hover:text-theme transition-colors" title="현재 명단 CSV로 내보내기"><i class="fa-solid fa-file-export mr-1"></i>내보내기</button>
+                        <button id="reset-list" class="text-xs font-semibold text-slate-400 hover:text-red-500 transition-colors"><i class="fa-solid fa-rotate-right mr-1"></i>명단 초기화</button>
+                        <button id="restore-excluded" disabled class="text-xs font-semibold text-slate-400 hover:text-theme transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-slate-400" title="제외된 참가자를 명단으로 복원"><i class="fa-solid fa-clock-rotate-left mr-1"></i>전체 복원<span id="excluded-count"></span></button>
+                        <span class="text-sm bg-slate-100 dark:bg-slate-700 px-3 py-1.5 rounded-lg font-bold text-slate-600 dark:text-slate-300">
+                            총 <span id="count-badge" class="text-theme text-lg">0</span>명
+                        </span>
                     </div>
-                    <p class="font-medium text-lg">참가자가 없습니다.</p>
-                    <p class="text-sm mt-1">상단에서 이름을 추가해주세요.</p>
+                </div>
+
+                <!-- Participant List -->
+                <div class="flex-1 overflow-y-auto p-8 relative bg-slate-50/50 dark:bg-slate-800/50">
+                    <ul id="participant-list" class="grid grid-cols-1 md:grid-cols-2 gap-3 pb-4">
+                        <!-- 동적 렌더링 -->
+                    </ul>
+                    <div id="empty-state" class="absolute inset-0 flex flex-col items-center justify-center text-slate-400">
+                        <div class="w-24 h-24 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mb-4">
+                            <i class="fa-solid fa-user-group text-4xl opacity-50"></i>
+                        </div>
+                        <p class="font-medium text-lg">참가자가 없습니다.</p>
+                        <p class="text-sm mt-1">상단에서 이름을 추가해주세요.</p>
+                    </div>
                 </div>
             </div>
 
             <!-- Draw Button -->
             <div class="p-8 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-700 shrink-0">
+                <div class="flex items-center justify-between mb-3">
+                    <label for="gender-mode-select" class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">뽑기 대상</label>
+                    <div class="flex items-center gap-2">
+                        <span class="lg:hidden text-sm bg-slate-100 dark:bg-slate-700 px-3 py-1.5 rounded-lg font-bold text-slate-600 dark:text-slate-300 shrink-0">
+                            총 <span id="count-badge-home" class="text-theme text-lg">0</span>명
+                        </span>
+                        <select id="gender-mode-select" class="text-sm font-semibold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 focus:outline-none focus-ring-theme text-slate-700 dark:text-slate-200">
+                            <option value="all">전체</option>
+                            <option value="M">남자만</option>
+                            <option value="F">여자만</option>
+                            <option value="alternate">번갈아가며</option>
+                        </select>
+                    </div>
+                </div>
                 <button id="draw-btn" disabled class="w-full h-20 bg-theme-gradient text-white text-2xl font-black rounded-2xl shadow-xl hover:shadow-2xl hover:shadow-theme/30 transform transition-all hover:-translate-y-1 active:translate-y-0 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-4 tracking-widest overflow-hidden relative group">
                     <div class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
                     <i class="fa-solid fa-wand-magic-sparkles text-3xl relative z-10"></i> 
@@ -174,11 +239,14 @@
         <!-- ==========================================
              [3] 오른쪽 패널: 커스터마이징 & 설정 
              ========================================== -->
-        <aside class="lg:col-span-3 bg-white dark:bg-slate-800 rounded-3xl shadow-2xl flex flex-col border border-slate-200 dark:border-slate-700 overflow-hidden transition-colors">
+        <aside id="settings-panel" class="mobile-sheet lg:flex lg:col-span-3 bg-white dark:bg-slate-800 rounded-3xl shadow-2xl flex-col border border-slate-200 dark:border-slate-700 overflow-hidden transition-colors">
             <div class="p-5 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/80">
                 <h2 class="text-lg font-bold text-slate-800 dark:text-white"><i class="fa-solid fa-palette mr-2 text-theme"></i>테마 & 설정</h2>
+                <button class="mobile-sheet-close lg:hidden text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 w-8 h-8 rounded-full flex items-center justify-center transition-colors" title="닫기">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
             </div>
-            
+
             <div class="flex-1 overflow-y-auto p-6 space-y-7 text-sm text-slate-700 dark:text-slate-300">
                 
                 <!-- 색상 선택 -->
@@ -199,7 +267,7 @@
                     <span class="font-bold text-slate-800 dark:text-white"><i class="fa-solid fa-moon mr-2 text-slate-400"></i>다크 모드</span>
                     <label class="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" id="theme-toggle" class="sr-only peer">
-                        <div class="w-12 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-theme"></div>
+                        <div class="w-12 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div>
                     </label>
                 </div>
 
@@ -208,7 +276,7 @@
                     <span class="font-bold text-slate-800 dark:text-white"><i class="fa-solid fa-volume-high mr-2 text-slate-400"></i>사운드 효과</span>
                     <label class="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" id="sound-toggle" class="sr-only peer" checked>
-                        <div class="w-12 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-theme"></div>
+                        <div class="w-12 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div>
                     </label>
                 </div>
 
@@ -254,21 +322,72 @@
 
     </div>
 
-    <!-- 뽑기 결과 모달 (전체화면 덮기) -->
-    <div id="result-overlay" class="fixed inset-0 bg-slate-900/90 backdrop-blur-lg z-[60] hidden flex flex-col items-center justify-center opacity-0 transition-opacity duration-500">
-        <div id="result-title" class="text-theme font-bold mb-8 text-3xl tracking-widest hidden bg-white px-8 py-3 rounded-full shadow-2xl border-4 border-theme transform -translate-y-10">
-            <i class="fa-solid fa-crown text-yellow-500 mr-3"></i>최종 당첨자
-        </div>
-        
-        <div id="result-name" class="text-7xl md:text-9xl lg:text-[10rem] font-black text-white text-center break-keep tracking-widest drop-shadow-[0_0_50px_rgba(255,255,255,0.3)]"></div>
-        
-        <button id="close-modal" class="mt-20 text-white bg-white/10 hover:bg-theme border-2 border-white/30 hover:border-transparent rounded-full px-10 py-4 font-bold text-xl transition-all duration-300 hidden items-center gap-3 shadow-2xl hover:scale-105 active:scale-95">
-            <i class="fa-solid fa-check"></i> 결과 확인완료
+    <!-- 모바일 바텀시트 배경 -->
+    <div id="mobile-sheet-backdrop" class="mobile-sheet-backdrop"></div>
+
+    <!-- 모바일 하단 탭바 -->
+    <nav id="mobile-tabbar" class="lg:hidden fixed bottom-0 inset-x-0 z-[95] bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 flex items-stretch h-16">
+        <button data-target="participant-sheet" class="mobile-tab-btn flex-1 flex flex-col items-center justify-center gap-0.5 text-slate-600 dark:text-slate-300 active:bg-slate-100 dark:active:bg-slate-700 transition-colors">
+            <i class="fa-solid fa-list-ul text-lg"></i>
+            <span class="text-[11px] font-semibold">명단</span>
         </button>
+        <button data-target="history-panel" class="mobile-tab-btn flex-1 flex flex-col items-center justify-center gap-0.5 text-slate-600 dark:text-slate-300 active:bg-slate-100 dark:active:bg-slate-700 transition-colors">
+            <i class="fa-solid fa-clock-rotate-left text-lg"></i>
+            <span class="text-[11px] font-semibold">히스토리</span>
+        </button>
+        <button data-target="settings-panel" class="mobile-tab-btn flex-1 flex flex-col items-center justify-center gap-0.5 text-slate-600 dark:text-slate-300 active:bg-slate-100 dark:active:bg-slate-700 transition-colors">
+            <i class="fa-solid fa-palette text-lg"></i>
+            <span class="text-[11px] font-semibold">설정</span>
+        </button>
+    </nav>
+
+    <!-- 뽑기 결과 모달 (전체화면 덮기) -->
+    <div id="result-overlay" class="fixed inset-0 bg-slate-900/90 backdrop-blur-lg z-[96] hidden flex flex-col items-center opacity-0 transition-opacity duration-500">
+        <div class="flex-1 w-full flex flex-col items-center justify-center min-h-0">
+            <div id="result-title" class="text-theme font-bold mb-8 text-3xl tracking-widest hidden bg-white px-8 py-3 rounded-full shadow-2xl border-4 border-theme transform -translate-y-10">
+                <i class="fa-solid fa-crown text-yellow-500 mr-3"></i>당첨
+            </div>
+
+            <div id="result-name" class="px-2 text-7xl sm:text-7xl md:text-9xl lg:text-[10rem] font-black text-white text-center break-keep tracking-widest drop-shadow-[0_0_50px_rgba(255,255,255,0.3)]"></div>
+        </div>
+
+        <div class="shrink-0 mb-8 sm:mb-16 flex flex-row gap-2 sm:gap-4 px-6 sm:px-0">
+            <button id="continue-draw" class="justify-center text-white bg-theme hover:bg-[var(--theme-primary-hover)] border-2 border-transparent rounded-full px-4 py-2 sm:px-10 sm:py-4 font-bold text-sm sm:text-xl transition-all duration-300 hidden items-center gap-2 sm:gap-3 shadow-2xl hover:scale-105 active:scale-95">
+                <i class="fa-solid fa-rotate-right"></i> 계속
+            </button>
+            <button id="close-modal" class="justify-center text-white bg-white/10 hover:bg-theme border-2 border-white/30 hover:border-transparent rounded-full px-4 py-2 sm:px-10 sm:py-4 font-bold text-sm sm:text-xl transition-all duration-300 hidden items-center gap-2 sm:gap-3 shadow-2xl hover:scale-105 active:scale-95">
+                <i class="fa-solid fa-check"></i> 확인완료
+            </button>
+        </div>
+    </div>
+
+    <!-- CSV 가져오기 확인 모달 -->
+    <div id="import-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[97] hidden flex items-center justify-center p-6">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-8 w-full max-w-md border border-slate-200 dark:border-slate-700">
+            <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-2"><i class="fa-solid fa-file-import text-theme mr-2"></i>명단 가져오기</h3>
+            <p id="import-modal-desc" class="text-sm text-slate-500 dark:text-slate-400 mb-6"></p>
+            <div class="flex flex-col gap-2">
+                <button id="import-replace-btn" class="w-full py-3 bg-theme text-white rounded-xl font-bold hover:bg-[var(--theme-primary-hover)] transition-colors">기존 명단 교체</button>
+                <button id="import-merge-btn" class="w-full py-3 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl font-bold hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">기존 명단에 추가</button>
+                <button id="import-cancel-btn" class="w-full py-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 text-sm font-semibold transition-colors">취소</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 공용 확인 모달 (네이티브 confirm() 대체) -->
+    <div id="confirm-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[97] hidden flex items-center justify-center p-6">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-8 w-full max-w-md border border-slate-200 dark:border-slate-700">
+            <h3 id="confirm-modal-title" class="text-lg font-bold text-slate-800 dark:text-white mb-2"></h3>
+            <p id="confirm-modal-desc" class="text-sm text-slate-500 dark:text-slate-400 mb-6"></p>
+            <div class="flex gap-2">
+                <button id="confirm-modal-cancel-btn" class="flex-1 py-3 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl font-bold hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">취소</button>
+                <button id="confirm-modal-ok-btn" class="flex-1 py-3 bg-rose-500 text-white rounded-xl font-bold hover:bg-rose-600 transition-colors">확인</button>
+            </div>
+        </div>
     </div>
 
     <!-- 토스트 알림 컨테이너 -->
-    <div id="toast-container" class="fixed bottom-8 right-8 z-[70] flex flex-col gap-3 pointer-events-none"></div>
+    <div id="toast-container" class="fixed bottom-8 right-8 z-[98] flex flex-col gap-3 pointer-events-none"></div>
 
     <!-- 폭죽 캔버스 -->
     <canvas id="confetti-canvas"></canvas>
@@ -283,23 +402,43 @@
             input: document.getElementById('name-input'),
             list: document.getElementById('participant-list'),
             countBadge: document.getElementById('count-badge'),
+            countBadgeHome: document.getElementById('count-badge-home'),
             emptyState: document.getElementById('empty-state'),
             drawBtn: document.getElementById('draw-btn'),
             toggleExclude: document.getElementById('toggle-exclude'),
             resetListBtn: document.getElementById('reset-list'),
-            
+            restoreExcludedBtn: document.getElementById('restore-excluded'),
+            excludedCount: document.getElementById('excluded-count'),
+            importListBtn: document.getElementById('import-list'),
+            exportListBtn: document.getElementById('export-list'),
+            importFileInput: document.getElementById('import-file-input'),
+            importModal: document.getElementById('import-modal'),
+            importModalDesc: document.getElementById('import-modal-desc'),
+            importReplaceBtn: document.getElementById('import-replace-btn'),
+            importMergeBtn: document.getElementById('import-merge-btn'),
+            importCancelBtn: document.getElementById('import-cancel-btn'),
+            genderToggleBtns: document.querySelectorAll('.gender-toggle-btn'),
+            genderModeSelect: document.getElementById('gender-mode-select'),
+            confirmModal: document.getElementById('confirm-modal'),
+            confirmModalTitle: document.getElementById('confirm-modal-title'),
+            confirmModalDesc: document.getElementById('confirm-modal-desc'),
+            confirmModalOkBtn: document.getElementById('confirm-modal-ok-btn'),
+            confirmModalCancelBtn: document.getElementById('confirm-modal-cancel-btn'),
+
             // 모달/오버레이
             resultOverlay: document.getElementById('result-overlay'),
             resultName: document.getElementById('result-name'),
             resultTitle: document.getElementById('result-title'),
             closeModal: document.getElementById('close-modal'),
+            continueDraw: document.getElementById('continue-draw'),
             toastContainer: document.getElementById('toast-container'),
             confettiCanvas: document.getElementById('confetti-canvas'),
             
             // 히스토리 패널
             historyList: document.getElementById('history-list'),
             btnClearHistory: document.getElementById('clear-history'),
-            
+            historyDateFilter: document.getElementById('history-date-filter'),
+
             // 설정 패널
             colorPicker: document.getElementById('color-picker'),
             colorPresets: document.querySelectorAll('.color-preset'),
@@ -313,15 +452,8 @@
         };
 
         const ctx = dom.confettiCanvas.getContext('2d');
-        let chartInstance = null;
 
         // --- 2. 기본 데이터 및 상태 관리 ---
-        const DEFAULT_STUDENTS = [
-            "구태리", "김고은", "김도윤", "김태연", "김태윤", "김하윤", "도예준", "박새봄", "박태경", 
-            "배찬영", "손무빈", "손유진", "엄서현", "윤한서", "이선우", "이윤서", "이지한", "이지훈", 
-            "임서유", "차아영", "최준우", "최지우", "홍승아", "홍현준", "황서륜"
-        ];
-
         const DEFAULT_SETTINGS = {
             primaryColor: '#8b5cf6',
             darkMode: false,
@@ -329,18 +461,48 @@
             font: "'Pretendard', sans-serif",
             animSpeed: 1,
             soundOn: true,
-            excludeMode: false
+            excludeMode: false,
+            genderMode: 'all'
         };
 
-        // 로컬 스토리지 데이터 로드 (없으면 기본 학생 목록 사용)
+        // 이전 버전(문자열 배열)으로 저장된 명단을 {name, gender} 객체 배열로 변환
+        const migrateParticipants = (raw) => {
+            if (!Array.isArray(raw)) return [];
+            return raw.map(p => typeof p === 'string' ? { name: p, gender: null } : p);
+        };
+
+        // 날짜별 기록 필터링을 위한 로컬 날짜 키 (YYYY-MM-DD)
+        const toDayKey = (d) => {
+            const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        };
+        const getRecordDayKey = (record) => {
+            if (record.dayKey) return record.dayKey;
+            const d = new Date(record.date);
+            return isNaN(d) ? null : toDayKey(d);
+        };
+
+        // 이름 길이에 따라 모바일 화면을 최대한 채우는 폰트 크기 선택
+        const getMobileNameSizeClass = (name) => {
+            const len = name.length;
+            if (len <= 2) return 'text-9xl';
+            if (len === 3) return 'text-8xl';
+            if (len === 4) return 'text-7xl';
+            if (len <= 6) return 'text-6xl';
+            return 'text-5xl';
+        };
+
+        // 로컬 스토리지 데이터 로드
         let state = {
-            participants: JSON.parse(localStorage.getItem('pd_participants')) || [...DEFAULT_STUDENTS],
+            participants: migrateParticipants(JSON.parse(localStorage.getItem('pd_participants'))),
+            excluded: migrateParticipants(JSON.parse(localStorage.getItem('pd_excluded'))),
             history: JSON.parse(localStorage.getItem('pd_history')) || [],
-            settings: JSON.parse(localStorage.getItem('pd_settings')) || { ...DEFAULT_SETTINGS }
+            settings: { ...DEFAULT_SETTINGS, ...(JSON.parse(localStorage.getItem('pd_settings')) || {}) }
         };
 
         const saveState = (key) => {
             if(key === 'participants') localStorage.setItem('pd_participants', JSON.stringify(state.participants));
+            if(key === 'excluded') localStorage.setItem('pd_excluded', JSON.stringify(state.excluded));
             if(key === 'history') localStorage.setItem('pd_history', JSON.stringify(state.history));
             if(key === 'settings') localStorage.setItem('pd_settings', JSON.stringify(state.settings));
         };
@@ -399,6 +561,25 @@
             }, 3000);
         };
 
+        // --- 4-1. 공용 확인 모달 (네이티브 confirm() 대체) ---
+        let confirmModalCallback = null;
+        const showConfirm = (title, desc, onConfirm) => {
+            dom.confirmModalTitle.textContent = title;
+            dom.confirmModalDesc.textContent = desc;
+            confirmModalCallback = onConfirm;
+            dom.confirmModal.classList.remove('hidden');
+        };
+        dom.confirmModalOkBtn.addEventListener('click', () => {
+            dom.confirmModal.classList.add('hidden');
+            const cb = confirmModalCallback;
+            confirmModalCallback = null;
+            if (cb) cb();
+        });
+        dom.confirmModalCancelBtn.addEventListener('click', () => {
+            dom.confirmModal.classList.add('hidden');
+            confirmModalCallback = null;
+        });
+
         // --- 5. 테마/설정 로직 ---
         const applySettingsToDOM = () => {
             const s = state.settings;
@@ -428,9 +609,7 @@
             dom.speedVal.textContent = s.animSpeed + 'x';
             dom.soundToggle.checked = s.soundOn;
             dom.toggleExclude.checked = s.excludeMode;
-            
-            // 차트 색상 업데이트
-            if(chartInstance) renderStatsChart();
+            dom.genderModeSelect.value = s.genderMode;
         };
 
         const updateSetting = (key, value) => {
@@ -450,42 +629,96 @@
         dom.speedSlider.addEventListener('input', (e) => updateSetting('animSpeed', parseFloat(e.target.value)));
         dom.soundToggle.addEventListener('change', (e) => updateSetting('soundOn', e.target.checked));
         dom.toggleExclude.addEventListener('change', (e) => updateSetting('excludeMode', e.target.checked));
-        
+        dom.genderModeSelect.addEventListener('change', (e) => updateSetting('genderMode', e.target.value));
+
         dom.resetSettings.addEventListener('click', () => {
-            if(confirm('설정을 기본값으로 되돌리시겠습니까?')){
+            showConfirm('기본 설정으로 복구', '설정을 기본값으로 되돌리시겠습니까?', () => {
                 state.settings = { ...DEFAULT_SETTINGS };
                 saveState('settings');
                 applySettingsToDOM();
                 showToast('기본 설정으로 복구되었습니다.');
-            }
+            });
         });
+
+        // --- 5-1. 모바일 바텀시트 내비게이션 ---
+        const mobileSheetBackdrop = document.getElementById('mobile-sheet-backdrop');
+        const mobileSheetIds = ['participant-sheet', 'history-panel', 'settings-panel'];
+        const mobileTabBtns = document.querySelectorAll('.mobile-tab-btn');
+
+        const setActiveTab = (openId) => {
+            mobileTabBtns.forEach(btn => {
+                const active = btn.dataset.target === openId;
+                btn.classList.toggle('text-theme', active);
+                btn.classList.toggle('text-slate-600', !active);
+                btn.classList.toggle('dark:text-slate-300', !active);
+            });
+        };
+
+        const closeMobileSheets = () => {
+            mobileSheetIds.forEach(id => document.getElementById(id).classList.remove('sheet-open'));
+            mobileSheetBackdrop.classList.remove('open');
+            setActiveTab(null);
+        };
+
+        const openMobileSheet = (id) => {
+            mobileSheetIds.forEach(sid => document.getElementById(sid).classList.toggle('sheet-open', sid === id));
+            mobileSheetBackdrop.classList.add('open');
+            setActiveTab(id);
+        };
+
+        mobileTabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = btn.dataset.target;
+                if (document.getElementById(id).classList.contains('sheet-open')) closeMobileSheets();
+                else openMobileSheet(id);
+            });
+        });
+
+        document.querySelectorAll('.mobile-sheet-close').forEach(btn => {
+            btn.addEventListener('click', closeMobileSheets);
+        });
+
+        mobileSheetBackdrop.addEventListener('click', closeMobileSheets);
 
         // --- 6. 메인 앱 로직 (참가자 관리) ---
         let sortableInstance = null;
 
+        const updateRestoreButton = () => {
+            dom.restoreExcludedBtn.disabled = state.excluded.length === 0;
+            dom.excludedCount.textContent = state.excluded.length > 0 ? ` (${state.excluded.length})` : '';
+        };
+
         const renderParticipants = () => {
             dom.list.innerHTML = '';
             dom.countBadge.textContent = state.participants.length;
-            
+            dom.countBadgeHome.textContent = state.participants.length;
+            updateRestoreButton();
+
             if (state.participants.length === 0) {
                 dom.emptyState.style.display = 'flex';
                 dom.drawBtn.disabled = true;
             } else {
                 dom.emptyState.style.display = 'none';
-                dom.drawBtn.disabled = state.participants.length < 2;
+                dom.drawBtn.disabled = false;
             }
 
-            state.participants.forEach((name, idx) => {
+            state.participants.forEach((p, idx) => {
                 const li = document.createElement('li');
                 li.className = 'flex justify-between items-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3.5 rounded-xl shadow-sm hover:shadow-md transition-shadow group cursor-move';
-                li.dataset.id = name;
+                li.dataset.id = p.name;
+                const genderBadge = p.gender === 'M'
+                    ? '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 shrink-0">남</span>'
+                    : p.gender === 'F'
+                    ? '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-pink-100 text-pink-600 dark:bg-pink-500/20 dark:text-pink-400 shrink-0">여</span>'
+                    : '';
                 li.innerHTML = `
                     <div class="flex items-center gap-3 overflow-hidden">
                         <i class="fa-solid fa-grip-vertical text-slate-300 dark:text-slate-600 group-hover:text-theme transition-colors"></i>
                         <div class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center shrink-0 text-theme font-bold text-sm">${idx + 1}</div>
-                        <span class="font-bold text-slate-700 dark:text-slate-200 truncate">${name}</span>
+                        <span class="font-bold text-slate-700 dark:text-slate-200 truncate">${p.name}</span>
+                        ${genderBadge}
                     </div>
-                    <button onclick="removeParticipant('${name}')" class="text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 w-9 h-9 rounded-full flex items-center justify-center transition-colors shrink-0" title="삭제">
+                    <button onclick="removeParticipant('${p.name}')" class="text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 w-9 h-9 rounded-full flex items-center justify-center transition-colors shrink-0" title="삭제">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
                 `;
@@ -506,55 +739,268 @@
             });
         };
 
+        let selectedGender = null;
+        dom.genderToggleBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const g = btn.dataset.gender;
+                selectedGender = selectedGender === g ? null : g;
+                dom.genderToggleBtns.forEach(b => {
+                    const active = b.dataset.gender === selectedGender;
+                    const activeClasses = b.dataset.gender === 'M'
+                        ? ['bg-blue-500', 'text-white']
+                        : ['bg-pink-500', 'text-white'];
+                    const idleClasses = ['bg-slate-50', 'dark:bg-slate-800', 'text-slate-400', 'dark:text-slate-500'];
+                    b.classList.remove(...activeClasses, ...idleClasses);
+                    b.classList.add(...(active ? activeClasses : idleClasses));
+                });
+            });
+        });
+
+        const resetGenderToggle = () => {
+            selectedGender = null;
+            dom.genderToggleBtns.forEach(b => {
+                b.classList.remove('bg-blue-500', 'bg-pink-500', 'text-white');
+                b.classList.add('bg-slate-50', 'dark:bg-slate-800', 'text-slate-400', 'dark:text-slate-500');
+            });
+        };
+
         dom.form.addEventListener('submit', (e) => {
             e.preventDefault();
             initAudio();
             const name = dom.input.value.trim();
             if (!name) return;
-            if (state.participants.includes(name)) {
+            if (state.participants.some(p => p.name === name)) {
                 showToast('이미 명단에 있는 이름입니다.', 'error');
                 return;
             }
-            state.participants.push(name);
+            state.participants.push({ name, gender: selectedGender });
             saveState('participants');
             dom.input.value = '';
+            resetGenderToggle();
             renderParticipants();
             playSound('click');
         });
 
         window.removeParticipant = (name) => {
             initAudio();
-            state.participants = state.participants.filter(p => p !== name);
+            state.participants = state.participants.filter(p => p.name !== name);
             saveState('participants');
             renderParticipants();
             playSound('click');
         };
 
         dom.resetListBtn.addEventListener('click', () => {
-            if(confirm('현재 명단을 초기화하고 기본 학생 명단으로 되돌리시겠습니까?')) {
-                state.participants = [...DEFAULT_STUDENTS];
+            showConfirm('명단 초기화', '현재 명단을 모두 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.', () => {
+                state.participants = [];
+                state.excluded = [];
                 saveState('participants');
+                saveState('excluded');
                 renderParticipants();
-                showToast('기본 명단으로 초기화되었습니다.', 'success');
+                showToast('명단이 초기화되었습니다.', 'success');
+            });
+        });
+
+        dom.restoreExcludedBtn.addEventListener('click', () => {
+            if (state.excluded.length === 0) return;
+            const restoredCount = state.excluded.length;
+            const existingNames = new Set(state.participants.map(p => p.name));
+            state.excluded.forEach(p => {
+                if (!existingNames.has(p.name)) {
+                    state.participants.push(p);
+                    existingNames.add(p.name);
+                }
+            });
+            state.excluded = [];
+            saveState('participants');
+            saveState('excluded');
+            renderParticipants();
+            showToast(`${restoredCount}명을 명단으로 복원했습니다.`, 'success');
+        });
+
+        // --- 6-1. 명단 CSV 가져오기 / 내보내기 ---
+        const parseCSV = (text) => {
+            // BOM 제거
+            text = text.replace(/^﻿/, '');
+            const rows = [];
+            let row = [], field = '', inQuotes = false;
+            for (let i = 0; i < text.length; i++) {
+                const c = text[i];
+                if (inQuotes) {
+                    if (c === '"') {
+                        if (text[i + 1] === '"') { field += '"'; i++; }
+                        else inQuotes = false;
+                    } else field += c;
+                } else {
+                    if (c === '"') inQuotes = true;
+                    else if (c === ',') { row.push(field); field = ''; }
+                    else if (c === '\n' || c === '\r') {
+                        if (c === '\r' && text[i + 1] === '\n') i++;
+                        row.push(field); field = '';
+                        rows.push(row); row = [];
+                    } else field += c;
+                }
             }
+            if (field !== '' || row.length > 0) { row.push(field); rows.push(row); }
+            return rows.filter(r => r.some(f => f.trim() !== ''));
+        };
+
+        const GENDER_MAP = { '남': 'M', '남자': 'M', 'm': 'M', 'male': 'M', '여': 'F', '여자': 'F', 'f': 'F', 'female': 'F' };
+
+        const extractParticipantsFromCSV = (text) => {
+            const rows = parseCSV(text);
+            if (rows.length === 0) return [];
+
+            const header = rows[0].map(h => h.trim());
+            const nameColIdx = header.findIndex(h => h === '성명' || h === '이름' || h.toLowerCase() === 'name');
+            const genderColIdx = header.findIndex(h => h === '성별' || h.toLowerCase() === 'gender');
+
+            let dataRows, colIdx;
+            if (nameColIdx !== -1) {
+                dataRows = rows.slice(1);
+                colIdx = nameColIdx;
+            } else if (header.length === 1) {
+                // 헤더 없이 한 줄에 이름 하나씩 있는 단순 목록으로 간주
+                dataRows = rows;
+                colIdx = 0;
+            } else {
+                return null; // 이름 컬럼을 찾을 수 없음
+            }
+
+            const seen = new Set();
+            const participants = [];
+            dataRows.forEach(r => {
+                const name = (r[colIdx] || '').trim();
+                if (!name || seen.has(name)) return;
+                seen.add(name);
+                const genderRaw = genderColIdx !== -1 ? (r[genderColIdx] || '').trim().toLowerCase() : '';
+                participants.push({ name, gender: GENDER_MAP[genderRaw] || null });
+            });
+            return participants;
+        };
+
+        let pendingImportParticipants = null;
+
+        const finishImport = (participants, mode) => {
+            let addedCount = 0;
+            if (mode === 'replace') {
+                state.participants = [...participants];
+                state.excluded = [];
+                saveState('excluded');
+                addedCount = participants.length;
+            } else {
+                const existingNames = new Set(state.participants.map(p => p.name));
+                participants.forEach(p => {
+                    if (!existingNames.has(p.name)) {
+                        state.participants.push(p);
+                        existingNames.add(p.name);
+                        addedCount++;
+                    }
+                });
+            }
+            saveState('participants');
+            renderParticipants();
+            showToast(mode === 'replace' ? `명단을 ${addedCount}명으로 교체했습니다.` : `${addedCount}명을 추가했습니다.`, 'success');
+        };
+
+        dom.importListBtn.addEventListener('click', () => dom.importFileInput.click());
+
+        dom.importFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const participants = extractParticipantsFromCSV(ev.target.result);
+                if (participants === null) {
+                    showToast("'성명' 또는 '이름' 컬럼을 찾을 수 없습니다.", 'error');
+                } else if (participants.length === 0) {
+                    showToast('가져올 이름이 없습니다.', 'error');
+                } else if (state.participants.length === 0) {
+                    finishImport(participants, 'replace');
+                } else {
+                    pendingImportParticipants = participants;
+                    dom.importModalDesc.textContent = `${participants.length}명의 이름을 찾았습니다. 기존 명단(${state.participants.length}명)을 어떻게 처리할까요?`;
+                    dom.importModal.classList.remove('hidden');
+                }
+            };
+            reader.readAsText(file, 'UTF-8');
+            dom.importFileInput.value = '';
+        });
+
+        const closeImportModal = () => {
+            dom.importModal.classList.add('hidden');
+            pendingImportParticipants = null;
+        };
+
+        dom.importReplaceBtn.addEventListener('click', () => {
+            if (pendingImportParticipants) finishImport(pendingImportParticipants, 'replace');
+            closeImportModal();
+        });
+        dom.importMergeBtn.addEventListener('click', () => {
+            if (pendingImportParticipants) finishImport(pendingImportParticipants, 'merge');
+            closeImportModal();
+        });
+        dom.importCancelBtn.addEventListener('click', closeImportModal);
+
+        const csvField = (value) => /[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
+
+        dom.exportListBtn.addEventListener('click', () => {
+            if (state.participants.length === 0) {
+                showToast('내보낼 명단이 없습니다.', 'error');
+                return;
+            }
+            const genderLabel = { M: '남', F: '여' };
+            const lines = ['성명,성별', ...state.participants.map(p => `${csvField(p.name)},${genderLabel[p.gender] || ''}`)];
+            const csvContent = '﻿' + lines.join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `참가자명단_${today}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('명단을 내보냈습니다.', 'success');
         });
 
         // --- 7. 뽑기 로직 (애니메이션 포함) ---
-        let isDrawing = false;
+        let isRolling = false;
 
-        dom.drawBtn.addEventListener('click', () => {
-            if (state.participants.length < 2 || isDrawing) return;
+        const runDraw = () => {
+            if (state.participants.length < 1 || isRolling) return;
+
+            // 성별 모드에 따라 뽑기 대상 풀 결정
+            const genderMode = state.settings.genderMode || 'all';
+            let pool = state.participants;
+
+            if (genderMode === 'M' || genderMode === 'F') {
+                pool = state.participants.filter(p => p.gender === genderMode);
+                if (pool.length < 1) {
+                    showToast(`${genderMode === 'M' ? '남자' : '여자'} 참가자가 없어 뽑을 수 없습니다.`, 'error');
+                    return;
+                }
+            } else if (genderMode === 'alternate') {
+                const lastGender = state.history[0]?.gender || null;
+                if (lastGender) {
+                    const opposite = lastGender === 'M' ? 'F' : 'M';
+                    const oppositePool = state.participants.filter(p => p.gender === opposite);
+                    if (oppositePool.length > 0) {
+                        pool = oppositePool;
+                    } else {
+                        showToast('반대 성별 참가자가 없어 전체 명단에서 뽑습니다.', 'info');
+                    }
+                }
+            }
+
             initAudio();
-            isDrawing = true;
+            isRolling = true;
 
             // UI 셋업
             dom.resultTitle.style.display = 'none';
             dom.closeModal.style.display = 'none';
+            dom.continueDraw.style.display = 'none';
             dom.resultOverlay.classList.remove('hidden');
             setTimeout(() => dom.resultOverlay.classList.remove('opacity-0'), 10);
 
-            dom.resultName.className = 'text-6xl md:text-8xl lg:text-[8rem] font-bold text-white/80 rolling-control blur-[2px] transition-all';
-            
             const speedMultiplier = state.settings.animSpeed;
             const rollDuration = 3000 / speedMultiplier;
             const rollInterval = 60 / speedMultiplier;
@@ -562,44 +1008,61 @@
 
             const rollingTimer = setInterval(() => {
                 let nextIdx;
-                do { nextIdx = Math.floor(Math.random() * state.participants.length); } 
-                while (nextIdx === currentIdx && state.participants.length > 1);
+                do { nextIdx = Math.floor(Math.random() * pool.length); }
+                while (nextIdx === currentIdx && pool.length > 1);
                 currentIdx = nextIdx;
-                dom.resultName.textContent = state.participants[currentIdx];
+                const rollingName = pool[currentIdx].name;
+                dom.resultName.textContent = rollingName;
+                dom.resultName.className = `px-2 ${getMobileNameSizeClass(rollingName)} sm:text-6xl md:text-8xl lg:text-[8rem] font-bold text-white/80 rolling-control blur-[2px] transition-all text-center break-keep`;
                 playSound('tick');
             }, rollInterval);
 
             setTimeout(() => {
                 clearInterval(rollingTimer);
-                
-                const winnerIdx = Math.floor(Math.random() * state.participants.length);
-                const finalWinner = state.participants[winnerIdx];
-                
-                // 기록 저장 및 통계 업데이트
-                state.history.unshift({ id: Date.now(), name: finalWinner, date: new Date().toLocaleString() });
+
+                const winnerIdx = Math.floor(Math.random() * pool.length);
+                const winner = pool[winnerIdx];
+
+                // 기록 저장
+                const now = new Date();
+                state.history.unshift({ id: Date.now(), name: winner.name, gender: winner.gender, date: now.toLocaleString(), dayKey: toDayKey(now) });
                 saveState('history');
-                renderStatsChart();
                 renderHistoryList();
 
                 // 최종 결과 노출 디자인
-                dom.resultName.textContent = finalWinner;
-                dom.resultName.className = 'text-8xl md:text-[10rem] lg:text-[12rem] font-black text-white drop-shadow-[0_0_60px_var(--theme-primary)] blur-0 transition-all duration-300 transform scale-110';
-                
+                dom.resultName.textContent = winner.name;
+                dom.resultName.className = `px-2 ${getMobileNameSizeClass(winner.name)} sm:text-7xl md:text-[10rem] lg:text-[12rem] font-black text-white text-center break-keep drop-shadow-[0_0_60px_var(--theme-primary)] blur-0 transition-all duration-300 transform scale-110`;
+
                 dom.resultTitle.style.display = 'inline-block';
                 dom.closeModal.style.display = 'flex';
 
                 playSound('success');
                 fireConfetti();
-                
+
                 // 제외 모드
                 if (state.settings.excludeMode) {
-                    state.participants.splice(winnerIdx, 1);
+                    const realIdx = state.participants.findIndex(p => p.name === winner.name);
+                    if (realIdx !== -1) {
+                        state.excluded.push(state.participants[realIdx]);
+                        state.participants.splice(realIdx, 1);
+                    }
                     saveState('participants');
+                    saveState('excluded');
                     renderParticipants();
-                    setTimeout(() => showToast(`'${finalWinner}' 님이 다음 뽑기에서 제외되었습니다.`), 1000);
+                    setTimeout(() => showToast(`'${winner.name}' 님이 다음 뽑기에서 제외되었습니다. ('전체 복원'으로 되돌릴 수 있어요)`), 1000);
                 }
 
+                dom.continueDraw.style.display = state.participants.length >= 1 ? 'flex' : 'none';
+                isRolling = false;
+
             }, rollDuration);
+        };
+
+        dom.drawBtn.addEventListener('click', runDraw);
+
+        dom.continueDraw.addEventListener('click', () => {
+            playSound('click');
+            runDraw();
         });
 
         dom.closeModal.addEventListener('click', () => {
@@ -608,89 +1071,71 @@
             clearConfetti();
             setTimeout(() => {
                 dom.resultOverlay.classList.add('hidden');
-                isDrawing = false;
             }, 500);
         });
 
         // --- 8. 통계 & 히스토리 (상시 표시) ---
         dom.btnClearHistory.addEventListener('click', () => {
-            if(confirm('모든 당첨 기록을 삭제하시겠습니까? 복구할 수 없습니다.')) {
+            showConfirm('기록 삭제', '모든 당첨 기록을 삭제하시겠습니까? 복구할 수 없습니다.', () => {
                 state.history = [];
                 saveState('history');
                 renderHistoryList();
-                renderStatsChart();
                 showToast('기록이 삭제되었습니다.');
-            }
+            });
         });
 
-        const renderStatsChart = () => {
-            const ctxChart = document.getElementById('statsChart').getContext('2d');
-            const counts = {};
-            state.history.forEach(h => counts[h.name] = (counts[h.name] || 0) + 1);
-            
-            const sortedData = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5);
-            const labels = sortedData.map(d => d[0]);
-            const data = sortedData.map(d => d[1]);
-
-            if (chartInstance) chartInstance.destroy();
-
-            if (labels.length === 0) {
-                chartInstance = new Chart(ctxChart, {
-                    type: 'bar',
-                    data: { labels: ['데이터 없음'], datasets: [{ data: [0], backgroundColor: '#cbd5e1' }] },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { display: false } } }
-                });
-                return;
-            }
-
-            const isDark = document.documentElement.classList.contains('dark');
-            const textColor = isDark ? '#94a3b8' : '#64748b';
-
-            chartInstance = new Chart(ctxChart, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: '당첨 횟수',
-                        data: data,
-                        backgroundColor: state.settings.primaryColor,
-                        borderRadius: 4,
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false }, tooltip: { padding: 10 } },
-                    scales: {
-                        y: { beginAtZero: true, ticks: { stepSize: 1, color: textColor }, grid: { color: isDark ? '#334155' : '#f1f5f9' } },
-                        x: { ticks: { color: textColor }, grid: { display: false } }
-                    }
-                }
-            });
-        };
+        dom.historyDateFilter.addEventListener('change', () => renderHistoryList());
 
         const renderHistoryList = () => {
             dom.historyList.innerHTML = '';
-            if(state.history.length === 0) {
-                dom.historyList.innerHTML = `<li class="text-center text-slate-400 py-10 text-sm">기록이 없습니다.</li>`;
+            const selectedDay = dom.historyDateFilter.value;
+            const filtered = state.history.filter(record => getRecordDayKey(record) === selectedDay);
+
+            if (filtered.length === 0) {
+                dom.historyList.innerHTML = `<li class="text-center text-slate-400 py-10 text-sm">이 날짜의 기록이 없습니다.</li>`;
                 return;
             }
 
-            // 상위 30개만 렌더링 (퍼포먼스 고려)
-            state.history.slice(0, 30).forEach(record => {
+            // 상위 50개만 렌더링 (퍼포먼스 고려)
+            filtered.slice(0, 50).forEach(record => {
                 const li = document.createElement('li');
                 li.className = 'flex justify-between items-center bg-white dark:bg-slate-800 p-3 border border-slate-100 dark:border-slate-700 rounded-xl shadow-sm';
                 li.innerHTML = `
-                    <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-3 overflow-hidden">
                         <div class="w-10 h-10 rounded-full bg-theme/10 text-theme flex items-center justify-center shrink-0"><i class="fa-solid fa-trophy"></i></div>
-                        <div>
-                            <p class="font-bold text-slate-700 dark:text-slate-200 text-base">${record.name}</p>
+                        <div class="truncate">
+                            <p class="font-bold text-slate-700 dark:text-slate-200 text-base truncate">${record.name}</p>
                             <p class="text-xs text-slate-400">${record.date}</p>
                         </div>
                     </div>
+                    <button onclick="removeHistoryRecord(${record.id})" class="text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 w-8 h-8 rounded-full flex items-center justify-center transition-colors shrink-0" title="기록 삭제">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
                 `;
                 dom.historyList.appendChild(li);
             });
+        };
+
+        window.removeHistoryRecord = (id) => {
+            const record = state.history.find(r => r.id === id);
+            state.history = state.history.filter(r => r.id !== id);
+            saveState('history');
+            renderHistoryList();
+
+            // 제외 모드로 명단에서 빠져있는 사람이면, 기록 삭제와 함께 명단으로 복원
+            if (record) {
+                const excludedIdx = state.excluded.findIndex(p => p.name === record.name);
+                if (excludedIdx !== -1) {
+                    const [restored] = state.excluded.splice(excludedIdx, 1);
+                    if (!state.participants.some(p => p.name === restored.name)) {
+                        state.participants.push(restored);
+                    }
+                    saveState('excluded');
+                    saveState('participants');
+                    renderParticipants();
+                    showToast(`'${restored.name}' 님이 명단으로 복원되었습니다.`, 'success');
+                }
+            }
         };
 
         // --- 9. 폭죽 (Confetti) 효과 ---
@@ -765,7 +1210,7 @@
         // --- 10. 앱 초기화 ---
         applySettingsToDOM();
         renderParticipants();
-        renderStatsChart();
+        dom.historyDateFilter.value = toDayKey(new Date());
         renderHistoryList();
 
     </script>
