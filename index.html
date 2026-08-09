@@ -1285,24 +1285,34 @@
             dom.resultTitle.style.display = 'none';
             dom.resultTeams.classList.remove('hidden');
 
-            // 팀 카드 배치를 팀 수에 맞춰 정사각형에 가깝게 배열해 공간을 최대한 채운다
+            // 팀 카드 배치를 팀 수에 맞춰 정사각형에 가깝게 나눈다. 각 "줄"을 별도의 grid로 만들어서
+            // 그 줄에 실제로 있는 카드 수만큼만 열을 나누므로(=마지막 줄이 다 안 차도 빈 칸이 안 남음),
+            // 동시에 바깥쪽 grid의 행들은 1fr로 세로 공간을 정확히 균등 분배해 스크롤도 생기지 않는다.
             const cardCols = Math.max(1, Math.ceil(Math.sqrt(teams.length)));
-            dom.resultTeams.style.gridTemplateColumns = `repeat(${cardCols}, minmax(0, 1fr))`;
-            dom.resultTeams.style.gridAutoRows = '1fr';
+            let globalIndex = 0;
+            const rows = [];
+            for (let i = 0; i < teams.length; i += cardCols) rows.push(teams.slice(i, i + cardCols));
 
-            dom.resultTeams.innerHTML = teams.map((team, i) => {
-                const memberCount = team.members.length;
-                // 인원이 많은 팀은 이름을 여러 열로 나눠 세로로 길어지지 않게 한다
-                const nameCols = memberCount <= 6 ? 1 : memberCount <= 12 ? 2 : memberCount <= 20 ? 3 : 4;
-                const color = TEAM_CARD_COLORS[i % TEAM_CARD_COLORS.length];
-                return `
-                    <div class="team-card h-full min-h-0 ${color.bg} backdrop-blur rounded-2xl border-2 ${color.border} p-4 sm:p-6 flex flex-col overflow-hidden">
-                        <p class="text-white font-black text-2xl sm:text-3xl mb-3 text-center shrink-0">${team.name}</p>
-                        <ul class="team-members flex-1 min-h-0 text-white/90 font-bold text-center" style="column-count:${nameCols}; column-gap:1.5rem;">
-                            ${team.members.map(name => `<li class="break-keep mb-2">${name}</li>`).join('')}
-                        </ul>
-                    </div>
-                `;
+            dom.resultTeams.style.gridTemplateRows = `repeat(${rows.length}, 1fr)`;
+            dom.resultTeams.style.gridTemplateColumns = '1fr';
+
+            dom.resultTeams.innerHTML = rows.map(rowTeams => {
+                const cardsHtml = rowTeams.map(team => {
+                    const memberCount = team.members.length;
+                    // 인원이 많은 팀은 이름을 여러 열로 나눠 세로로 길어지지 않게 한다
+                    const nameCols = memberCount <= 6 ? 1 : memberCount <= 12 ? 2 : memberCount <= 20 ? 3 : 4;
+                    const color = TEAM_CARD_COLORS[globalIndex % TEAM_CARD_COLORS.length];
+                    globalIndex++;
+                    return `
+                        <div class="team-card h-full min-h-0 ${color.bg} backdrop-blur rounded-2xl border-2 ${color.border} p-4 sm:p-6 flex flex-col overflow-hidden">
+                            <p class="text-white font-black text-2xl sm:text-3xl mb-3 text-center shrink-0">${team.name}</p>
+                            <ul class="team-members flex-1 min-h-0 text-white/90 font-bold text-center" style="column-count:${nameCols}; column-gap:1.5rem;">
+                                ${team.members.map(name => `<li class="break-keep mb-2">${name}</li>`).join('')}
+                            </ul>
+                        </div>
+                    `;
+                }).join('');
+                return `<div class="team-row h-full min-h-0 grid gap-4" style="grid-template-columns: repeat(${rowTeams.length}, minmax(0, 1fr));">${cardsHtml}</div>`;
             }).join('');
 
             // 레이아웃이 실제로 잡힌 다음 프레임에 측정해야 카드 높이가 정확하다
