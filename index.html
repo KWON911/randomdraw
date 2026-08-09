@@ -59,6 +59,9 @@
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         html.dark ::-webkit-scrollbar-thumb { background: #475569; }
 
+        /* 다크모드에서 date input 달력 아이콘을 흰색으로 */
+        html.dark input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1) brightness(1.5); }
+
         /* 애니메이션 */
         .anim-control { animation-duration: calc(1s / var(--anim-speed)) !important; }
         .rolling-control { transition-duration: calc(0.1s / var(--anim-speed)) !important; }
@@ -806,7 +809,8 @@
             const existingNames = new Set(state.participants.map(p => p.name));
             state.excluded.forEach(p => {
                 if (!existingNames.has(p.name)) {
-                    state.participants.push(p);
+                    const { excludedByRecordId, ...restored } = p;
+                    state.participants.push(restored);
                     existingNames.add(p.name);
                 }
             });
@@ -1025,7 +1029,8 @@
 
                 // 기록 저장
                 const now = new Date();
-                state.history.unshift({ id: Date.now(), name: winner.name, gender: winner.gender, date: now.toLocaleString(), dayKey: toDayKey(now) });
+                const recordId = Date.now();
+                state.history.unshift({ id: recordId, name: winner.name, gender: winner.gender, date: now.toLocaleString(), dayKey: toDayKey(now) });
                 saveState('history');
                 renderHistoryList();
 
@@ -1043,7 +1048,7 @@
                 if (state.settings.excludeMode) {
                     const realIdx = state.participants.findIndex(p => p.name === winner.name);
                     if (realIdx !== -1) {
-                        state.excluded.push(state.participants[realIdx]);
+                        state.excluded.push({ ...state.participants[realIdx], excludedByRecordId: recordId });
                         state.participants.splice(realIdx, 1);
                     }
                     saveState('participants');
@@ -1123,10 +1128,12 @@
             renderHistoryList();
 
             // 제외 모드로 명단에서 빠져있는 사람이면, 기록 삭제와 함께 명단으로 복원
+            // (단, 지금 삭제하는 기록이 실제로 그 사람을 제외시킨 기록일 때만 복원)
             if (record) {
-                const excludedIdx = state.excluded.findIndex(p => p.name === record.name);
+                const excludedIdx = state.excluded.findIndex(p => p.name === record.name && p.excludedByRecordId === record.id);
                 if (excludedIdx !== -1) {
-                    const [restored] = state.excluded.splice(excludedIdx, 1);
+                    const [restoredRaw] = state.excluded.splice(excludedIdx, 1);
+                    const { excludedByRecordId, ...restored } = restoredRaw;
                     if (!state.participants.some(p => p.name === restored.name)) {
                         state.participants.push(restored);
                     }
