@@ -74,7 +74,7 @@ test('distributeTeams: every participant appears exactly once, team count matche
     const participants = Array.from({ length: 12 }, (_, i) => ({ name: `p${i}`, gender: null, ability: null }));
     const teams = distributeTeams(participants, 4, {});
     assert.equal(teams.length, 4);
-    const allMembers = teams.flatMap(t => t.members).sort();
+    const allMembers = teams.flatMap(t => t.members).map(m => m.name).sort();
     assert.deepEqual(allMembers, participants.map(p => p.name).sort());
 });
 
@@ -92,8 +92,8 @@ test('distributeTeams: balanceGender keeps each team gender counts within 1 of e
         ...Array.from({ length: 6 }, (_, i) => ({ name: `f${i}`, gender: 'F', ability: null }))
     ];
     const teams = distributeTeams(participants, 4, { balanceGender: true });
-    const mCounts = teams.map(t => t.members.filter(name => name.startsWith('m')).length);
-    const fCounts = teams.map(t => t.members.filter(name => name.startsWith('f')).length);
+    const mCounts = teams.map(t => t.members.filter(m => m.name.startsWith('m')).length);
+    const fCounts = teams.map(t => t.members.filter(m => m.name.startsWith('f')).length);
     assert.ok(Math.max(...mCounts) - Math.min(...mCounts) <= 1);
     assert.ok(Math.max(...fCounts) - Math.min(...fCounts) <= 1);
 });
@@ -104,8 +104,8 @@ test('distributeTeams: balanceAbility keeps each team ability-tier counts within
         ...Array.from({ length: 6 }, (_, i) => ({ name: `l${i}`, gender: null, ability: '하' }))
     ];
     const teams = distributeTeams(participants, 4, { balanceAbility: true });
-    const hCounts = teams.map(t => t.members.filter(name => name.startsWith('h')).length);
-    const lCounts = teams.map(t => t.members.filter(name => name.startsWith('l')).length);
+    const hCounts = teams.map(t => t.members.filter(m => m.name.startsWith('h')).length);
+    const lCounts = teams.map(t => t.members.filter(m => m.name.startsWith('l')).length);
     assert.ok(Math.max(...hCounts) - Math.min(...hCounts) <= 1);
     assert.ok(Math.max(...lCounts) - Math.min(...lCounts) <= 1);
 });
@@ -120,7 +120,7 @@ test('distributeTeams: balanceGender + balanceAbility together does not crash an
         { name: 'f', gender: null, ability: null }
     ];
     const teams = distributeTeams(participants, 2, { balanceGender: true, balanceAbility: true });
-    const allMembers = teams.flatMap(t => t.members).sort();
+    const allMembers = teams.flatMap(t => t.members).map(m => m.name).sort();
     assert.deepEqual(allMembers, participants.map(p => p.name).sort());
 });
 

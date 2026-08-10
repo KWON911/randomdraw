@@ -76,7 +76,7 @@
         Object.keys(groups).forEach(key => {
             const shuffled = shuffle(groups[key], rng);
             shuffled.forEach(p => {
-                teams[teamPointer % teamCount].members.push(p.name);
+                teams[teamPointer % teamCount].members.push({ name: p.name, gender: p.gender });
                 teamPointer++;
             });
         });

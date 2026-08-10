@@ -168,20 +168,22 @@
 
                 <!-- Input & Toolbar -->
                 <div class="px-8 lg:-mt-6 relative z-20 shrink-0 pt-6 lg:pt-0">
-                    <form id="add-form" class="bg-white dark:bg-slate-900 p-2.5 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 flex gap-2">
-                        <input type="text" id="name-input" class="flex-1 min-w-0 px-4 py-3 text-lg bg-slate-50 dark:bg-slate-800 rounded-xl text-slate-800 dark:text-slate-100 focus:outline-none focus-ring-theme transition-shadow placeholder-slate-400" placeholder="참가자 이름 입력 후 Enter" autocomplete="off">
-                        <div class="flex gap-1 shrink-0">
-                            <button type="button" data-gender="M" class="gender-toggle-btn w-12 rounded-xl font-bold text-sm bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 transition-colors">남</button>
-                            <button type="button" data-gender="F" class="gender-toggle-btn w-12 rounded-xl font-bold text-sm bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 transition-colors">여</button>
+                    <form id="add-form" class="bg-white dark:bg-slate-900 p-2.5 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 flex flex-wrap lg:flex-nowrap gap-2">
+                        <input type="text" id="name-input" class="w-full lg:flex-1 lg:w-auto min-w-0 px-4 py-3 text-lg bg-slate-50 dark:bg-slate-800 rounded-xl text-slate-800 dark:text-slate-100 focus:outline-none focus-ring-theme transition-shadow placeholder-slate-400" placeholder="참가자 이름 입력 후 Enter" autocomplete="off">
+                        <div class="flex w-full lg:w-auto lg:contents gap-2">
+                            <div class="flex gap-1 shrink-0">
+                                <button type="button" data-gender="M" class="gender-toggle-btn w-12 rounded-xl font-bold text-sm bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 transition-colors">남</button>
+                                <button type="button" data-gender="F" class="gender-toggle-btn w-12 rounded-xl font-bold text-sm bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 transition-colors">여</button>
+                            </div>
+                            <div class="flex gap-1 shrink-0">
+                                <button type="button" data-ability="상" class="ability-toggle-btn w-8 rounded-xl font-bold text-[10px] bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 transition-colors">상</button>
+                                <button type="button" data-ability="중" class="ability-toggle-btn w-8 rounded-xl font-bold text-[10px] bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 transition-colors">중</button>
+                                <button type="button" data-ability="하" class="ability-toggle-btn w-8 rounded-xl font-bold text-[10px] bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 transition-colors">하</button>
+                            </div>
+                            <button type="submit" class="flex-1 lg:flex-none lg:w-16 bg-theme text-white rounded-xl flex items-center justify-center transition-transform hover:scale-105 active:scale-95 shadow-md shrink-0">
+                                <i class="fa-solid fa-plus text-xl"></i>
+                            </button>
                         </div>
-                        <div class="flex gap-1 shrink-0">
-                            <button type="button" data-ability="상" class="ability-toggle-btn w-8 rounded-xl font-bold text-[10px] bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 transition-colors">상</button>
-                            <button type="button" data-ability="중" class="ability-toggle-btn w-8 rounded-xl font-bold text-[10px] bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 transition-colors">중</button>
-                            <button type="button" data-ability="하" class="ability-toggle-btn w-8 rounded-xl font-bold text-[10px] bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 transition-colors">하</button>
-                        </div>
-                        <button type="submit" class="bg-theme text-white w-16 rounded-xl flex items-center justify-center transition-transform hover:scale-105 active:scale-95 shadow-md shrink-0">
-                            <i class="fa-solid fa-plus text-xl"></i>
-                        </button>
                     </form>
                 </div>
 
@@ -668,21 +670,37 @@
         };
 
         // --- 4. 공통 UI 유틸리티 ---
-        const showToast = (message, type = 'info') => {
+        const showToast = (message, type = 'info', { actionLabel, onAction } = {}) => {
             const toast = document.createElement('div');
-            let colors = type === 'success' ? 'bg-emerald-500 text-white shadow-emerald-500/30' 
-                       : type === 'error' ? 'bg-rose-500 text-white shadow-rose-500/30' 
+            let colors = type === 'success' ? 'bg-emerald-500 text-white shadow-emerald-500/30'
+                       : type === 'error' ? 'bg-rose-500 text-white shadow-rose-500/30'
                        : 'bg-slate-800 text-white dark:bg-white dark:text-slate-800 shadow-slate-800/30';
             let icon = type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-circle-exclamation' : 'fa-info-circle';
-            
-            toast.className = `toast-enter flex items-center gap-3 px-6 py-4 rounded-2xl shadow-xl font-bold text-sm ${colors}`;
+
+            toast.className = `toast-enter pointer-events-auto flex items-center gap-3 px-6 py-4 rounded-2xl shadow-xl font-bold text-sm ${colors}`;
             toast.innerHTML = `<i class="fa-solid ${icon} text-lg"></i> <span>${message}</span>`;
-            dom.toastContainer.appendChild(toast);
-            
-            setTimeout(() => {
+
+            let dismissTimer;
+            const dismiss = () => {
+                clearTimeout(dismissTimer);
                 toast.classList.replace('toast-enter', 'toast-exit');
                 setTimeout(() => toast.remove(), 300);
-            }, 3000);
+            };
+
+            if (actionLabel && onAction) {
+                const actionBtn = document.createElement('button');
+                actionBtn.type = 'button';
+                actionBtn.className = 'ml-2 underline decoration-2 underline-offset-2 hover:opacity-80 transition-opacity shrink-0';
+                actionBtn.textContent = actionLabel;
+                actionBtn.addEventListener('click', () => {
+                    onAction();
+                    dismiss();
+                });
+                toast.appendChild(actionBtn);
+            }
+
+            dom.toastContainer.appendChild(toast);
+            dismissTimer = setTimeout(dismiss, 3000);
         };
 
         // --- 4-1. 공용 확인 모달 (네이티브 confirm() 대체) ---
@@ -1013,10 +1031,22 @@
 
         window.removeParticipant = (name) => {
             initAudio();
-            state.participants = state.participants.filter(p => p.name !== name);
+            const removedIdx = state.participants.findIndex(p => p.name === name);
+            if (removedIdx === -1) return;
+            const [removed] = state.participants.splice(removedIdx, 1);
             saveState('participants');
             renderParticipants();
             playSound('click');
+            showToast(`'${removed.name}' 님을 삭제했습니다.`, 'info', {
+                actionLabel: '실행취소',
+                onAction: () => {
+                    if (state.participants.some(p => p.name === removed.name)) return;
+                    state.participants.splice(Math.min(removedIdx, state.participants.length), 0, removed);
+                    saveState('participants');
+                    renderParticipants();
+                    showToast(`'${removed.name}' 님을 복구했습니다.`, 'success');
+                }
+            });
         };
 
         dom.resetListBtn.addEventListener('click', () => {
@@ -1302,9 +1332,10 @@
         //  1) ul 전체가 아니라 각 li를 "개별로" 검사한다 — 이름 하나가 자기 칸을 넘어 옆 li로
         //     넘치면 ul 전체 기준 크기는 안 넘친 것처럼 보일 수 있어서, li마다 자기 자신의
         //     scrollWidth/Height가 자기 clientWidth/Height를 넘는지 각각 확인한다.
-        //  2) 그래도 혹시 안 맞는 경우를 대비해, li 자체에 overflow-wrap:anywhere(필요하면 글자
-        //     중간이라도 줄바꿈)와 overflow:hidden(그래도 안 맞으면 옆으로 새지 않고 그 안에서
-        //     잘림)을 CSS로 걸어 둔다. 즉 "측정이 완벽하지 않아도 겹침은 구조적으로 불가능"하다.
+        //  2) 그래도 혹시 안 맞는 경우를 대비해, li 자체에 white-space:nowrap(이름이 글자 단위로
+        //     줄바꿈되어 첫 글자만 보이는 문제를 막기 위함)과 overflow:hidden + text-overflow:ellipsis
+        //     (그래도 안 맞으면 "..."으로 잘림)를 CSS로 걸어 둔다. 즉 "측정이 완벽하지 않아도 겹침은
+        //     구조적으로 불가능"하다.
         const fitTextToBox = (el, { max = 120, min = 12 } = {}) => {
             const items = [...el.querySelectorAll('li')];
             const fits = (size) => {
@@ -1385,11 +1416,20 @@
 
             dom.resultTeams.innerHTML = teams.map((team, i) => {
                 const color = TEAM_CARD_COLORS[i % TEAM_CARD_COLORS.length];
+                // 이전 버전 히스토리 기록은 members가 이름 문자열 배열이라, 재열람 시에도 깨지지
+                // 않도록 {name, gender} 객체로 정규화한다.
+                const members = team.members.map(m => typeof m === 'string' ? { name: m, gender: null } : m);
+                const mCount = members.filter(m => m.gender === 'M').length;
+                const fCount = members.filter(m => m.gender === 'F').length;
+                const genderBadge = (mCount > 0 || fCount > 0)
+                    ? `<p class="text-white/80 font-bold text-xs sm:text-sm mb-2 text-center shrink-0">남 ${mCount} · 여 ${fCount}</p>`
+                    : '';
                 return `
                     <div class="team-card h-full min-h-0 ${color.bg} backdrop-blur rounded-2xl border-2 ${color.border} p-4 sm:p-6 flex flex-col overflow-hidden">
-                        <p class="text-white font-black text-2xl sm:text-3xl mb-3 text-center shrink-0">${team.name}</p>
+                        <p class="text-white font-black text-2xl sm:text-3xl mb-1 text-center shrink-0">${team.name}</p>
+                        ${genderBadge}
                         <ul class="team-members flex-1 min-h-0 overflow-hidden text-white/90 font-bold text-center">
-                            ${team.members.map(name => `<li class="min-w-0 min-h-0 overflow-hidden flex items-center justify-center text-center" style="overflow-wrap:anywhere;">${name}</li>`).join('')}
+                            ${members.map(m => `<li class="min-w-0 min-h-0 overflow-hidden flex items-center justify-center text-center" style="white-space:nowrap;text-overflow:ellipsis;">${m.name}</li>`).join('')}
                         </ul>
                     </div>
                 `;
@@ -1452,7 +1492,10 @@
             if (!lastTeamResult) return;
             const lines = ['팀,이름'];
             lastTeamResult.forEach(team => {
-                team.members.forEach(name => lines.push(`${team.name},${csvField(name)}`));
+                team.members.forEach(m => {
+                    const name = typeof m === 'string' ? m : m.name;
+                    lines.push(`${team.name},${csvField(name)}`);
+                });
             });
             const csvContent = '﻿' + lines.join('\n');
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
