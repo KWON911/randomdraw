@@ -634,13 +634,17 @@
                 !Array.isArray(event.data?.participants)
             ) return;
 
+            // 기존 참가자와 이름이 같으면 그 사람이 지정해둔 능력(상/중/하) 등급을 유지한다.
+            const existingAbilityByName = new Map(
+                [...state.participants, ...state.excluded].map((p) => [p.name, p.ability])
+            );
             const seen = new Set();
             state.participants = event.data.participants
                 .filter((participant) => participant && typeof participant.name === 'string')
                 .map((participant) => ({
                     name: participant.name.trim(),
                     gender: participant.gender === 'M' || participant.gender === 'F' ? participant.gender : null,
-                    ability: null
+                    ability: existingAbilityByName.get(participant.name.trim()) || null
                 }))
                 .filter((participant) => participant.name && !seen.has(participant.name) && seen.add(participant.name));
             state.excluded = [];
