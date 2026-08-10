@@ -591,6 +591,46 @@
             if(key === 'settings') localStorage.setItem('pd_settings', JSON.stringify(state.settings));
         };
 
+        // classlog에서 열었을 때만 해당 교사의 최신 학생 명단으로 교체한다.
+        // 직접 접속한 사용자와 다른 선생님의 기존 입력/CSV 방식은 그대로 유지한다.
+        const CLASSLOG_ORIGINS = new Set([
+            'https://classlog-ten.vercel.app',
+            'http://localhost:5173',
+            'http://127.0.0.1:5173'
+        ]);
+
+        const syncRosterFromClasslog = (event) => {
+            if (
+                !CLASSLOG_ORIGINS.has(event.origin) ||
+                event.source !== window.opener ||
+                event.data?.type !== 'classlog-roster-sync' ||
+                event.data?.version !== 1 ||
+                event.data?.mode !== 'replace' ||
+                !Array.isArray(event.data?.participants)
+            ) return;
+
+            const seen = new Set();
+            state.participants = event.data.participants
+                .filter((participant) => participant && typeof participant.name === 'string')
+                .map((participant) => ({
+                    name: participant.name.trim(),
+                    gender: participant.gender === 'M' || participant.gender === 'F' ? participant.gender : null,
+                    ability: null
+                }))
+                .filter((participant) => participant.name && !seen.has(participant.name) && seen.add(participant.name));
+            state.excluded = [];
+            saveState('participants');
+            saveState('excluded');
+            renderParticipants();
+            showToast(`classlog 학생 명단 ${state.participants.length}명을 불러왔습니다.`, 'success');
+        };
+
+        window.addEventListener('message', syncRosterFromClasslog);
+        const openerOrigin = document.referrer ? new URL(document.referrer).origin : '';
+        if (window.opener && CLASSLOG_ORIGINS.has(openerOrigin)) {
+            window.opener.postMessage({ type: 'randomdraw-ready', version: 1 }, openerOrigin);
+        }
+
         // --- 3. 오디오 시스템 ---
         let audioCtx;
         const initAudio = () => {
