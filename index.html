@@ -1444,17 +1444,24 @@
             dom.resultTeams.innerHTML = teams.map((team, i) => {
                 const color = TEAM_CARD_COLORS[i % TEAM_CARD_COLORS.length];
                 // 이전 버전 히스토리 기록은 members가 이름 문자열 배열이라, 재열람 시에도 깨지지
-                // 않도록 {name, gender} 객체로 정규화한다.
-                const members = team.members.map(m => typeof m === 'string' ? { name: m, gender: null } : m);
+                // 않도록 {name, gender, ability} 객체로 정규화한다.
+                const members = team.members.map(m => typeof m === 'string' ? { name: m, gender: null, ability: null } : m);
                 const mCount = members.filter(m => m.gender === 'M').length;
                 const fCount = members.filter(m => m.gender === 'F').length;
                 const genderBadge = (mCount > 0 || fCount > 0)
                     ? `<p class="text-white/80 font-bold text-xs sm:text-sm mb-2 text-center shrink-0">남 ${mCount} · 여 ${fCount}</p>`
                     : '';
+                const highCount = members.filter(m => m.ability === '상').length;
+                const midCount = members.filter(m => m.ability === '중').length;
+                const lowCount = members.filter(m => m.ability === '하').length;
+                const abilityBadge = (highCount > 0 || midCount > 0 || lowCount > 0)
+                    ? `<p class="text-white/80 font-bold text-xs sm:text-sm mb-2 text-center shrink-0">상 ${highCount} · 중 ${midCount} · 하 ${lowCount}</p>`
+                    : '';
                 return `
                     <div class="team-card h-full min-h-0 ${color.bg} backdrop-blur rounded-2xl border-2 ${color.border} p-4 sm:p-6 flex flex-col overflow-hidden">
                         <p class="text-white font-black text-2xl sm:text-3xl mb-1 text-center shrink-0">${escapeHtml(team.name)}</p>
                         ${genderBadge}
+                        ${abilityBadge}
                         <ul class="team-members flex-1 min-h-0 overflow-hidden text-white/90 font-bold text-center">
                             ${members.map(m => `<li class="min-w-0 min-h-0 overflow-hidden flex items-center justify-center text-center" style="white-space:nowrap;text-overflow:ellipsis;">${escapeHtml(m.name)}</li>`).join('')}
                         </ul>
