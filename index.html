@@ -540,6 +540,12 @@
             }
         };
 
+        // 참가자 이름은 사용자 입력/CSV에서 그대로 들어오므로, innerHTML 템플릿에 넣기 전
+        // 반드시 이스케이프한다(그렇지 않으면 이름에 악성 스크립트 태그를 심어 XSS가 가능해진다).
+        const escapeHtml = (str) => String(str).replace(/[&<>"']/g, (c) => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[c]));
+
         // 이전 버전(문자열 배열 / ability 없는 객체)으로 저장된 명단을 {name, gender, ability} 객체 배열로 변환
         const migrateParticipants = (raw) => {
             if (!Array.isArray(raw)) return [];
@@ -574,12 +580,28 @@
         // 항상 teamSettings를 별도로 복제해 state.settings가 DEFAULT_SETTINGS와 객체를 공유하지 않도록 한다.
         const cloneDefaultSettings = () => ({ ...DEFAULT_SETTINGS, teamSettings: { ...DEFAULT_SETTINGS.teamSettings } });
 
+        // 로컬 스토리지 값 하나가 깨져도(수동 편집, 확장 프로그램 간섭 등) 앱 전체가 빈 화면으로
+        // 멎지 않도록, 파싱 실패 시 기본값으로 폴백하고 손상된 키는 지워서 다음 로드부터 정상화한다.
+        let hadCorruptedStorage = false;
+        const safeParseStorage = (key, fallback) => {
+            const raw = localStorage.getItem(key);
+            if (raw === null) return fallback;
+            try {
+                return JSON.parse(raw);
+            } catch (e) {
+                console.warn(`손상된 localStorage 항목(${key})을 초기화합니다.`, e);
+                localStorage.removeItem(key);
+                hadCorruptedStorage = true;
+                return fallback;
+            }
+        };
+
         // 로컬 스토리지 데이터 로드
-        const savedSettings = JSON.parse(localStorage.getItem('pd_settings')) || {};
+        const savedSettings = safeParseStorage('pd_settings', {}) || {};
         let state = {
-            participants: migrateParticipants(JSON.parse(localStorage.getItem('pd_participants'))),
-            excluded: migrateParticipants(JSON.parse(localStorage.getItem('pd_excluded'))),
-            history: JSON.parse(localStorage.getItem('pd_history')) || [],
+            participants: migrateParticipants(safeParseStorage('pd_participants', [])),
+            excluded: migrateParticipants(safeParseStorage('pd_excluded', [])),
+            history: safeParseStorage('pd_history', []) || [],
             settings: {
                 ...cloneDefaultSettings(),
                 ...savedSettings,
@@ -679,7 +701,10 @@
             let icon = type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-circle-exclamation' : 'fa-info-circle';
 
             toast.className = `toast-enter pointer-events-auto flex items-center gap-3 px-6 py-4 rounded-2xl shadow-xl font-bold text-sm ${colors}`;
-            toast.innerHTML = `<i class="fa-solid ${icon} text-lg"></i> <span>${message}</span>`;
+            toast.innerHTML = `<i class="fa-solid ${icon} text-lg"></i> <span></span>`;
+            // message는 참가자 이름 등 사용자 입력을 담을 수 있어 HTML로 해석되지 않도록
+            // innerHTML이 아닌 textContent로 채운다(XSS 방지).
+            toast.querySelector('span').textContent = message;
 
             let dismissTimer;
             const dismiss = () => {
@@ -895,13 +920,14 @@
                     <div class="flex items-center gap-3 overflow-hidden">
                         <i class="fa-solid fa-grip-vertical text-slate-300 dark:text-slate-600 group-hover:text-theme transition-colors"></i>
                         <div class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center shrink-0 text-theme font-bold text-sm">${idx + 1}</div>
-                        <span class="font-bold text-slate-700 dark:text-slate-200 truncate">${p.name}</span>
+                        <span class="font-bold text-slate-700 dark:text-slate-200 truncate">${escapeHtml(p.name)}</span>
                         ${genderBadge}
                     </div>
-                    <button onclick="removeParticipant('${p.name}')" class="text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 w-9 h-9 rounded-full flex items-center justify-center transition-colors shrink-0" title="삭제">
+                    <button type="button" class="remove-participant-btn text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 w-9 h-9 rounded-full flex items-center justify-center transition-colors shrink-0" title="삭제">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
                 `;
+                li.querySelector('.remove-participant-btn').addEventListener('click', () => removeParticipant(p.name));
                 dom.list.appendChild(li);
             });
 
@@ -981,10 +1007,10 @@
                 return `
                     <li class="flex items-center justify-between gap-3 bg-slate-50 dark:bg-slate-900 p-3 rounded-xl">
                         <div class="flex items-center gap-2 overflow-hidden">
-                            <span class="font-bold text-slate-700 dark:text-slate-200 truncate">${p.name}</span>
+                            <span class="font-bold text-slate-700 dark:text-slate-200 truncate">${escapeHtml(p.name)}</span>
                             ${genderBadge}
                         </div>
-                        <select data-name="${p.name}" class="ability-select text-sm font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 focus:outline-none focus-ring-theme text-slate-700 dark:text-slate-200">
+                        <select data-name="${escapeHtml(p.name)}" class="ability-select text-sm font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 focus:outline-none focus-ring-theme text-slate-700 dark:text-slate-200">
                             <option value="" ${!p.ability ? 'selected' : ''}>미지정</option>
                             <option value="상" ${p.ability === '상' ? 'selected' : ''}>상</option>
                             <option value="중" ${p.ability === '중' ? 'selected' : ''}>중</option>
@@ -1427,10 +1453,10 @@
                     : '';
                 return `
                     <div class="team-card h-full min-h-0 ${color.bg} backdrop-blur rounded-2xl border-2 ${color.border} p-4 sm:p-6 flex flex-col overflow-hidden">
-                        <p class="text-white font-black text-2xl sm:text-3xl mb-1 text-center shrink-0">${team.name}</p>
+                        <p class="text-white font-black text-2xl sm:text-3xl mb-1 text-center shrink-0">${escapeHtml(team.name)}</p>
                         ${genderBadge}
                         <ul class="team-members flex-1 min-h-0 overflow-hidden text-white/90 font-bold text-center">
-                            ${members.map(m => `<li class="min-w-0 min-h-0 overflow-hidden flex items-center justify-center text-center" style="white-space:nowrap;text-overflow:ellipsis;">${m.name}</li>`).join('')}
+                            ${members.map(m => `<li class="min-w-0 min-h-0 overflow-hidden flex items-center justify-center text-center" style="white-space:nowrap;text-overflow:ellipsis;">${escapeHtml(m.name)}</li>`).join('')}
                         </ul>
                     </div>
                 `;
@@ -1575,7 +1601,7 @@
                         <div class="flex items-center gap-3 overflow-hidden">
                             <div class="w-10 h-10 rounded-full bg-theme/10 text-theme flex items-center justify-center shrink-0"><i class="fa-solid fa-trophy"></i></div>
                             <div class="truncate">
-                                <p class="font-bold text-slate-700 dark:text-slate-200 text-base truncate">${record.name}</p>
+                                <p class="font-bold text-slate-700 dark:text-slate-200 text-base truncate">${escapeHtml(record.name)}</p>
                                 <p class="text-xs text-slate-400">${record.date}</p>
                             </div>
                         </div>
@@ -1694,6 +1720,9 @@
         renderParticipants();
         dom.historyDateFilter.value = toDayKey(new Date());
         renderHistoryList();
+        if (hadCorruptedStorage) {
+            showToast('저장된 데이터 일부가 손상되어 초기화했습니다. 명단을 확인해주세요.', 'error');
+        }
 
     </script>
 </body>
