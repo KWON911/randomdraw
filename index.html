@@ -161,7 +161,7 @@
 
                 <!-- Participant List -->
                 <div class="flex-1 overflow-y-auto p-4 sm:p-8 pt-4 sm:pt-6 relative bg-slate-50/50 dark:bg-slate-800/50">
-                    <ul id="participant-list" class="flex flex-wrap content-start justify-center gap-2 sm:gap-3 pb-4">
+                    <ul id="participant-list" class="h-full">
                         <!-- 동적 렌더링 -->
                     </ul>
                     <div id="empty-state" class="absolute inset-0 flex flex-col items-center justify-center text-slate-400">
@@ -1013,24 +1013,21 @@
 
             state.participants.forEach((p, idx) => {
                 const li = document.createElement('li');
-                // TV/프로젝터 화면에서 학생들도 자기 이름을 알아볼 수 있도록 이름 글씨와
-                // 카드 자체를 크게 키운다(1920x1080에서 약 30명이 화면을 채우는 정도를
-                // 기준으로 잡았다). 번호는 순서일 뿐 학생에게 의미가 없어 카드에서 뺐고,
-                // 성별도 학생 화면에 노출할 정보가 아니라 표시하지 않는다(등급 · 성별
-                // 관리에서만 확인/수정).
+                // 번호는 순서일 뿐 학생에게 의미가 없어 카드에서 뺐고, 성별도 학생 화면에
+                // 노출할 정보가 아니라 표시하지 않는다(등급 · 성별 관리에서만 확인/수정).
                 // 이름을 카드 가운데 정렬하기 위해 grid(드래그 아이콘 / 이름(1fr, 가운데 정렬) /
                 // 삭제 버튼) 3열로 구성한다 — flex justify-between이면 이름이 항상 왼쪽에
                 // 붙어버려서 가운데로 오지 않는다.
-                // 모바일에서는 카드 폭을 "50% - 간격 절반"으로 줘서 한 줄에 정확히 2명씩
-                // 보이게 하고, 화면이 커지면(sm 이상) 글자 크기에 맞춰 큰 고정폭으로 바꾼다.
-                li.className = 'grid grid-cols-[auto_1fr_auto] items-center gap-2 sm:gap-4 min-w-[calc(50%-4px)] sm:min-w-[280px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 sm:p-5 rounded-xl shadow-sm hover:shadow-md hover:border-theme transition-shadow group cursor-move';
+                // 글씨 크기는 여기서 고정하지 않는다 — fitParticipantList()가 인원수에 맞춰
+                // ul의 font-size를 실측으로 정하면 이 span은 그 값을 그대로 물려받는다.
+                li.className = 'grid grid-cols-[auto_1fr_auto] items-center gap-2 sm:gap-3 min-w-0 min-h-0 overflow-hidden bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 rounded-xl shadow-sm hover:shadow-md hover:border-theme transition-shadow group cursor-move';
                 li.title = '클릭하여 정보 수정';
                 li.dataset.id = p.name;
                 li.innerHTML = `
-                    <i class="fa-solid fa-grip-vertical text-slate-300 dark:text-slate-600 group-hover:text-theme transition-colors"></i>
-                    <span class="font-bold text-lg sm:text-3xl xl:text-4xl text-slate-700 dark:text-slate-200 truncate text-center">${escapeHtml(p.name)}</span>
-                    <button type="button" class="remove-participant-btn text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-colors shrink-0" title="삭제">
-                        <i class="fa-solid fa-lg fa-xmark"></i>
+                    <i class="fa-solid fa-grip-vertical text-sm text-slate-300 dark:text-slate-600 group-hover:text-theme transition-colors"></i>
+                    <span class="font-bold text-slate-700 dark:text-slate-200 truncate text-center">${escapeHtml(p.name)}</span>
+                    <button type="button" class="remove-participant-btn text-slate-300 dark:text-slate-500 opacity-50 hover:opacity-100 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 w-6 h-6 rounded-full flex items-center justify-center transition-colors shrink-0" title="삭제">
+                        <i class="fa-solid fa-xmark text-xs"></i>
                     </button>
                 `;
                 li.querySelector('.remove-participant-btn').addEventListener('click', (e) => {
@@ -1039,6 +1036,11 @@
                 });
                 li.addEventListener('click', () => openEditParticipantModal(idx));
                 dom.list.appendChild(li);
+            });
+
+            requestAnimationFrame(() => {
+                const fontsReady = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
+                fontsReady.then(fitParticipantList);
             });
 
             // Drag & Drop 초기화
@@ -1566,6 +1568,41 @@
             if (dom.resultTeams.classList.contains('hidden')) return;
             [...dom.resultTeams.querySelectorAll('.team-members')].forEach(fitMemberList);
         };
+
+        // 참가자 명단 카드도 팀 결과 카드와 같은 방식(실측 이분 탐색)으로 인원수에 맞춰
+        // 자동으로 줄어든다 — 인원이 적으면 TV에서 크게, 많아지면 스크롤 없이 다 들어오게
+        // 작게. grid-auto-flow는 team-members와 달리 row로 둬서 왼쪽→오른쪽, 위→아래
+        // 순서로 읽히게 한다(명단은 등수가 아니라 목록이라 이 순서가 더 자연스럽다).
+        const applyParticipantGrid = (el, cols, count) => {
+            const rows = Math.max(1, Math.ceil(count / cols));
+            el.style.display = 'grid';
+            el.style.gridAutoFlow = 'row';
+            el.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
+            el.style.gridTemplateRows = `repeat(${rows}, minmax(0, 1fr))`;
+            el.style.columnGap = '0.5rem';
+            el.style.rowGap = '0.5rem';
+        };
+
+        const fitParticipantList = () => {
+            const el = dom.list;
+            const count = state.participants.length;
+            if (count === 0) return;
+            const maxCols = Math.max(1, Math.min(10, count));
+            let bestCols = 1, bestSize = 0;
+            for (let cols = 1; cols <= maxCols; cols++) {
+                applyParticipantGrid(el, cols, count);
+                const size = fitTextToBox(el, { max: 56, min: 14 });
+                if (size > bestSize) { bestSize = size; bestCols = cols; }
+            }
+            applyParticipantGrid(el, bestCols, count);
+            el.style.fontSize = bestSize + 'px';
+        };
+
+        let participantResizeDebounce = null;
+        new ResizeObserver(() => {
+            clearTimeout(participantResizeDebounce);
+            participantResizeDebounce = setTimeout(fitParticipantList, 150);
+        }).observe(dom.list.parentElement);
 
         let teamResizeDebounce = null;
         new ResizeObserver(() => {
