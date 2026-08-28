@@ -137,7 +137,7 @@
             <header class="relative flex-1 lg:flex-none flex flex-col items-center justify-center bg-theme-gradient p-8 lg:py-6 text-center transition-all overflow-hidden">
                 <div class="absolute inset-0 opacity-20" style="background-image: radial-gradient(circle at 2px 2px, white 1px, transparent 0); background-size: 20px 20px;"></div>
                 <div class="flex items-center justify-center gap-3 relative z-10">
-                    <div class="w-20 h-20 lg:w-14 lg:h-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-lg ring-1 ring-white/30 transform hover:scale-105 transition-transform shrink-0">
+                    <div class="w-20 h-20 lg:w-14 lg:h-14 rounded-2xl flex items-center justify-center shadow-lg ring-1 ring-white/30 transform hover:scale-105 transition-transform shrink-0" style="background: linear-gradient(135deg, #ef4444, #f97316, #eab308, #22c55e, #3b82f6, #8b5cf6, #ec4899);">
                         <i class="fa-solid fa-dice-d20 text-4xl lg:text-2xl text-white drop-shadow-md"></i>
                     </div>
                     <h1 class="text-4xl lg:text-5xl font-bold text-white tracking-wide drop-shadow-sm">랜덤 뽑기</h1>
@@ -200,11 +200,13 @@
                             <i class="fa-solid fa-plus text-lg"></i>
                         </button>
                     </form>
-                    <button id="draw-btn" disabled class="w-64 max-w-full h-12 bg-theme-gradient text-white text-base font-black rounded-2xl shadow-xl hover:shadow-2xl hover:shadow-theme/30 transform transition-all hover:-translate-y-1 active:translate-y-0 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2 tracking-widest overflow-hidden relative group justify-self-center">
-                        <div class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
-                        <i class="fa-solid fa-wand-magic-sparkles text-lg relative z-10"></i>
-                        <span class="relative z-10">뽑기 시작!</span>
-                    </button>
+                    <div class="w-64 max-w-full rounded-2xl p-[3px] justify-self-center shadow-xl" style="background: linear-gradient(90deg, #ef4444, #f97316, #eab308, #22c55e, #3b82f6, #8b5cf6, #ec4899);">
+                        <button id="draw-btn" disabled class="w-full h-12 bg-theme-gradient text-white text-base font-black rounded-xl hover:shadow-2xl hover:shadow-theme/30 transform transition-all hover:-translate-y-1 active:translate-y-0 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2 tracking-widest overflow-hidden relative group">
+                            <div class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
+                            <i class="fa-solid fa-wand-magic-sparkles text-lg relative z-10"></i>
+                            <span class="relative z-10">뽑기 시작!</span>
+                        </button>
+                    </div>
                     <div class="flex flex-wrap items-center gap-3 justify-center lg:justify-start">
                         <span class="flex items-center bg-slate-100 dark:bg-slate-700 px-4 py-3 rounded-xl font-bold text-slate-600 dark:text-slate-300 shrink-0">
                             총 <span id="count-badge-home" class="text-theme text-lg mx-1">0</span>명
