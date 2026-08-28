@@ -99,6 +99,28 @@
             z-index: 85;
         }
         .mobile-sheet-backdrop.open { display: block; }
+
+        /* 설정 패널은 활동 중(뽑기/팀 나누기)엔 필요 없으므로, 화면 크기와 무관하게 평소엔
+           숨겨져 있다가 톱니바퀴 버튼을 눌렀을 때만 오른쪽에서 슬라이드되어 나오는 오버레이
+           서랍으로 동작한다(데스크톱도 더 이상 고정 3번째 칼럼이 아니다). */
+        .settings-drawer { display: none; }
+        .settings-drawer.sheet-open {
+            display: flex !important;
+            flex-direction: column;
+            position: fixed;
+            top: 0; right: 0; bottom: 0;
+            width: 100%; max-width: 420px;
+            z-index: 96;
+            border-radius: 0;
+            box-shadow: -10px 0 40px rgba(0,0,0,0.35);
+        }
+        @media (max-width: 1023px) {
+            .settings-drawer.sheet-open {
+                top: 4vh; left: 0; right: 0; max-width: 100%; max-height: 96vh;
+                border-radius: 1.5rem 1.5rem 0 0;
+                box-shadow: 0 -10px 40px rgba(0,0,0,0.35);
+            }
+        }
     </style>
 </head>
 <body class="has-mobile-layout pattern-dots min-h-screen flex items-center justify-center p-3 lg:p-6 overflow-hidden">
@@ -142,7 +164,7 @@
         <!-- ==========================================
              [2] 중앙 패널: 메인 뽑기 영역 
              ========================================== -->
-        <main class="lg:col-span-6 bg-white dark:bg-slate-800 rounded-3xl shadow-2xl flex flex-col border border-slate-200 dark:border-slate-700 overflow-hidden transition-colors relative">
+        <main class="lg:col-span-9 bg-white dark:bg-slate-800 rounded-3xl shadow-2xl flex flex-col border border-slate-200 dark:border-slate-700 overflow-hidden transition-colors relative">
 
             <!-- Hero Header -->
             <header class="relative flex-1 lg:flex-none flex flex-col items-center justify-center bg-theme-gradient p-8 text-center transition-all overflow-hidden">
@@ -188,26 +210,6 @@
                     </form>
                 </div>
 
-                <div class="px-8 py-4 flex flex-col lg:flex-row lg:justify-between lg:items-center gap-3 border-b border-slate-100 dark:border-slate-700 bg-transparent shrink-0 mt-2">
-                    <label class="flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300 cursor-pointer select-none group">
-                        <div class="relative">
-                            <input type="checkbox" id="toggle-exclude" class="sr-only peer">
-                            <div class="w-10 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div>
-                        </div>
-                        <span class="group-hover:text-theme transition-colors">당첨자 1회성 제외 모드</span>
-                    </label>
-                    <div class="flex flex-wrap items-center gap-3">
-                        <input type="file" id="import-file-input" accept=".csv,.txt" class="hidden">
-                        <button id="import-list" class="text-xs font-semibold text-slate-400 hover:text-theme transition-colors" title="CSV로 명단 가져오기"><i class="fa-solid fa-file-import mr-1"></i>가져오기</button>
-                        <button id="export-list" class="text-xs font-semibold text-slate-400 hover:text-theme transition-colors" title="현재 명단 CSV로 내보내기"><i class="fa-solid fa-file-export mr-1"></i>내보내기</button>
-                        <button id="reset-list" class="text-xs font-semibold text-slate-400 hover:text-red-500 transition-colors"><i class="fa-solid fa-rotate-right mr-1"></i>명단 초기화</button>
-                        <button id="restore-excluded" disabled class="text-xs font-semibold text-slate-400 hover:text-theme transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-slate-400" title="제외된 참가자를 명단으로 복원"><i class="fa-solid fa-clock-rotate-left mr-1"></i>전체 복원<span id="excluded-count"></span></button>
-                        <span class="text-sm bg-slate-100 dark:bg-slate-700 px-3 py-1.5 rounded-lg font-bold text-slate-600 dark:text-slate-300">
-                            총 <span id="count-badge" class="text-theme text-lg">0</span>명
-                        </span>
-                    </div>
-                </div>
-
                 <!-- Participant List -->
                 <div class="flex-1 overflow-y-auto p-8 relative bg-slate-50/50 dark:bg-slate-800/50">
                     <ul id="participant-list" class="grid grid-cols-1 md:grid-cols-2 gap-3 pb-4">
@@ -228,7 +230,7 @@
                 <div class="flex items-center justify-between mb-3">
                     <label for="gender-mode-select" class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">뽑기 대상</label>
                     <div class="flex items-center gap-2">
-                        <span class="lg:hidden text-sm bg-slate-100 dark:bg-slate-700 px-3 py-1.5 rounded-lg font-bold text-slate-600 dark:text-slate-300 shrink-0">
+                        <span class="text-sm bg-slate-100 dark:bg-slate-700 px-3 py-1.5 rounded-lg font-bold text-slate-600 dark:text-slate-300 shrink-0">
                             총 <span id="count-badge-home" class="text-theme text-lg">0</span>명
                         </span>
                         <select id="gender-mode-select" class="text-sm font-semibold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 focus:outline-none focus-ring-theme text-slate-700 dark:text-slate-200">
@@ -264,20 +266,44 @@
                 </button>
             </div>
         </main>
+    </div>
 
         <!-- ==========================================
              [3] 오른쪽 패널: 커스터마이징 & 설정 
              ========================================== -->
-        <aside id="settings-panel" class="mobile-sheet lg:flex lg:col-span-3 bg-white dark:bg-slate-800 rounded-3xl shadow-2xl flex-col border border-slate-200 dark:border-slate-700 overflow-hidden transition-colors">
+        <aside id="settings-panel" class="settings-drawer bg-white dark:bg-slate-800 shadow-2xl border-l border-slate-200 dark:border-slate-700 overflow-hidden transition-colors">
             <div class="p-5 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/80">
                 <h2 class="text-lg font-bold text-slate-800 dark:text-white"><i class="fa-solid fa-palette mr-2 text-theme"></i>테마 & 설정</h2>
-                <button class="mobile-sheet-close lg:hidden text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 w-8 h-8 rounded-full flex items-center justify-center transition-colors" title="닫기">
+                <button class="mobile-sheet-close text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 w-8 h-8 rounded-full flex items-center justify-center transition-colors" title="닫기">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
 
             <div class="flex-1 overflow-y-auto p-6 space-y-7 text-sm text-slate-700 dark:text-slate-300">
-                
+
+                <!-- 명단 관리 도구 (활동 중에는 필요 없어 참가자 화면에서 이리로 옮김) -->
+                <div class="space-y-3">
+                    <label class="block font-bold text-slate-800 dark:text-white">명단 관리</label>
+                    <label class="flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300 cursor-pointer select-none group">
+                        <div class="relative">
+                            <input type="checkbox" id="toggle-exclude" class="sr-only peer">
+                            <div class="w-10 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div>
+                        </div>
+                        <span class="group-hover:text-theme transition-colors">당첨자 1회성 제외 모드</span>
+                    </label>
+                    <input type="file" id="import-file-input" accept=".csv,.txt" class="hidden">
+                    <div class="grid grid-cols-2 gap-2">
+                        <button id="import-list" class="flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-300 bg-slate-100 dark:bg-slate-900 hover:bg-theme hover:text-white dark:hover:bg-theme rounded-lg py-2 transition-colors" title="CSV로 명단 가져오기"><i class="fa-solid fa-file-import"></i>가져오기</button>
+                        <button id="export-list" class="flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-300 bg-slate-100 dark:bg-slate-900 hover:bg-theme hover:text-white dark:hover:bg-theme rounded-lg py-2 transition-colors" title="현재 명단 CSV로 내보내기"><i class="fa-solid fa-file-export"></i>내보내기</button>
+                        <button id="reset-list" class="flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-300 bg-slate-100 dark:bg-slate-900 hover:bg-rose-500 hover:text-white rounded-lg py-2 transition-colors"><i class="fa-solid fa-rotate-right"></i>명단 초기화</button>
+                        <button id="restore-excluded" disabled class="flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-300 bg-slate-100 dark:bg-slate-900 hover:bg-theme hover:text-white dark:hover:bg-theme rounded-lg py-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-slate-100 disabled:hover:text-slate-500 dark:disabled:hover:bg-slate-900 dark:disabled:hover:text-slate-300" title="제외된 참가자를 명단으로 복원"><i class="fa-solid fa-clock-rotate-left"></i>전체 복원<span id="excluded-count"></span></button>
+                        <button id="ability-modal-btn" class="col-span-2 flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-300 bg-slate-100 dark:bg-slate-900 hover:bg-theme hover:text-white dark:hover:bg-theme rounded-lg py-2 transition-colors"><i class="fa-solid fa-ranking-star"></i>등급 관리</button>
+                    </div>
+                    <span class="inline-block text-sm bg-slate-100 dark:bg-slate-700 px-3 py-1.5 rounded-lg font-bold text-slate-600 dark:text-slate-300">
+                        총 <span id="count-badge" class="text-theme text-lg">0</span>명
+                    </span>
+                </div>
+
                 <!-- 색상 선택 -->
                 <div>
                     <label class="block font-bold mb-3 text-slate-800 dark:text-white">브랜드 컬러</label>
@@ -289,11 +315,6 @@
                         <button class="color-preset w-10 h-10 rounded-full bg-[#10b981] shadow-sm hover:scale-110 transition-transform focus:ring-[#10b981]" data-color="#10b981"></button>
                         <button class="color-preset w-10 h-10 rounded-full bg-[#f59e0b] shadow-sm hover:scale-110 transition-transform focus:ring-[#f59e0b]" data-color="#f59e0b"></button>
                     </div>
-                </div>
-
-                <!-- 등급 관리 -->
-                <div class="pt-1">
-                    <button id="ability-modal-btn" class="w-full py-2.5 text-sm font-semibold text-slate-500 hover:text-theme bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-xl transition-colors"><i class="fa-solid fa-ranking-star mr-2"></i>등급 관리</button>
                 </div>
 
                 <!-- 다크모드 -->
@@ -354,10 +375,13 @@
             </div>
         </aside>
 
-    </div>
-
     <!-- 모바일 바텀시트 배경 -->
     <div id="mobile-sheet-backdrop" class="mobile-sheet-backdrop"></div>
+
+    <!-- 데스크톱 전용 설정 열기 버튼 (활동 중엔 필요 없어 평소엔 숨겨진 설정 서랍을 연다) -->
+    <button id="desktop-settings-btn" class="hidden lg:flex fixed top-6 right-6 z-[80] w-12 h-12 rounded-full bg-white dark:bg-slate-800 shadow-xl border border-slate-200 dark:border-slate-700 items-center justify-center text-slate-500 hover:text-theme transition-colors" title="테마 & 설정">
+        <i class="fa-solid fa-gear text-lg"></i>
+    </button>
 
     <!-- 모바일 하단 탭바 -->
     <nav id="mobile-tabbar" class="lg:hidden fixed bottom-0 inset-x-0 z-[95] bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 flex items-stretch h-16">
@@ -635,8 +659,13 @@
             ) return;
 
             // 기존 참가자와 이름이 같으면 그 사람이 지정해둔 능력(상/중/하) 등급을 유지한다.
-            const existingAbilityByName = new Map(
-                [...state.participants, ...state.excluded].map((p) => [p.name, p.ability])
+            // (이름을 키로 매칭하므로, classlog가 보내는 이름 표기가 어제와 달라지면 매칭이
+            // 끊겨 등급이 없어진 것처럼 보일 수 있다 — 그래서 실제로 몇 명이 유지 안 됐는지
+            // 아래에서 세어 눈에 띄게 경고한다.)
+            const oldAbilityByName = new Map(
+                [...state.participants, ...state.excluded]
+                    .filter((p) => p.ability)
+                    .map((p) => [p.name.trim(), p.ability])
             );
             const seen = new Set();
             state.participants = event.data.participants
@@ -644,14 +673,23 @@
                 .map((participant) => ({
                     name: participant.name.trim(),
                     gender: participant.gender === 'M' || participant.gender === 'F' ? participant.gender : null,
-                    ability: existingAbilityByName.get(participant.name.trim()) || null
+                    ability: oldAbilityByName.get(participant.name.trim()) || null
                 }))
                 .filter((participant) => participant.name && !seen.has(participant.name) && seen.add(participant.name));
             state.excluded = [];
             saveState('participants');
             saveState('excluded');
             renderParticipants();
+
+            const carriedOverCount = state.participants.filter((p) => p.ability).length;
+            const droppedCount = oldAbilityByName.size - carriedOverCount;
             showToast(`classlog 학생 명단 ${state.participants.length}명을 불러왔습니다.`, 'success');
+            if (droppedCount > 0) {
+                setTimeout(() => showToast(
+                    `이전에 지정한 능력 등급 중 ${droppedCount}명분이 이름 불일치로 유지되지 않았습니다. 등급 관리에서 확인해주세요.`,
+                    'error'
+                ), 1200);
+            }
         };
 
         window.addEventListener('message', syncRosterFromClasslog);
@@ -888,6 +926,13 @@
         });
 
         mobileSheetBackdrop.addEventListener('click', closeMobileSheets);
+
+        // 데스크톱에서도 설정 패널은 항상 떠 있는 3번째 칼럼이 아니라, 이 버튼으로만 여는
+        // 오버레이 서랍이다(모바일 바텀시트와 같은 open/close 메커니즘을 그대로 재사용한다).
+        document.getElementById('desktop-settings-btn').addEventListener('click', () => {
+            if (document.getElementById('settings-panel').classList.contains('sheet-open')) closeMobileSheets();
+            else openMobileSheet('settings-panel');
+        });
 
         // --- 6. 메인 앱 로직 (참가자 관리) ---
         let sortableInstance = null;
