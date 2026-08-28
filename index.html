@@ -134,7 +134,10 @@
         <main class="lg:col-span-12 bg-white dark:bg-slate-800 rounded-3xl shadow-2xl flex flex-col border border-slate-200 dark:border-slate-700 overflow-hidden transition-colors relative">
 
             <!-- Hero Header -->
-            <header class="relative flex-1 lg:flex-none flex flex-col items-center justify-center bg-theme-gradient p-8 lg:py-6 text-center transition-all overflow-hidden">
+            <!-- 모바일에서 참가자 목록(참가자 목록 시트)은 기본적으로 숨겨져 있어서, 헤더가
+                 flex-1이면 그 빈 공간을 헤더가 다 흡수해버려 아래 이름추가/시작 버튼 줄이
+                 화면 밖으로 밀려난다. shrink-0으로 내용 크기만큼만 차지하게 고정한다. -->
+            <header class="relative shrink-0 flex flex-col items-center justify-center bg-theme-gradient p-8 lg:py-6 text-center transition-all overflow-hidden">
                 <div class="absolute inset-0 opacity-20" style="background-image: radial-gradient(circle at 2px 2px, white 1px, transparent 0); background-size: 20px 20px;"></div>
                 <div class="flex items-center justify-center gap-3 relative z-10">
                     <div class="w-20 h-20 lg:w-14 lg:h-14 rounded-2xl flex items-center justify-center shadow-lg ring-1 ring-white/30 transform hover:scale-105 transition-transform shrink-0" style="background: linear-gradient(135deg, #ef4444, #f97316, #eab308, #22c55e, #3b82f6, #8b5cf6, #ec4899);">
@@ -157,8 +160,8 @@
                 </div>
 
                 <!-- Participant List -->
-                <div class="flex-1 overflow-y-auto p-8 pt-6 relative bg-slate-50/50 dark:bg-slate-800/50">
-                    <ul id="participant-list" class="flex flex-wrap content-start justify-center gap-3 pb-4">
+                <div class="flex-1 overflow-y-auto p-4 sm:p-8 pt-4 sm:pt-6 relative bg-slate-50/50 dark:bg-slate-800/50">
+                    <ul id="participant-list" class="flex flex-wrap content-start justify-center gap-2 sm:gap-3 pb-4">
                         <!-- 동적 렌더링 -->
                     </ul>
                     <div id="empty-state" class="absolute inset-0 flex flex-col items-center justify-center text-slate-400">
@@ -172,7 +175,10 @@
             </div>
 
             <!-- Draw Button -->
-            <div class="p-8 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-700 shrink-0">
+            <!-- 모바일에선 참가자 목록이 기본 숨김이라 헤더 아래 남는 공간을 이 영역이
+                 flex-1로 채우고, 안의 내용은 justify-center로 세로 가운데에 놓는다.
+                 데스크톱(lg)은 원래대로 내용 높이만큼만 차지한다. -->
+            <div class="p-8 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-700 flex-1 lg:flex-none flex flex-col justify-center lg:block">
                 <div id="team-settings-panel" class="hidden mb-3 p-3 max-w-2xl mx-auto bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-700">
                     <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
                         <div class="flex gap-1 shrink-0">
@@ -222,7 +228,8 @@
                             <option value="alternate">번갈아가며</option>
                             <option value="team">팀 나누기</option>
                         </select>
-                        <button id="desktop-drawer-btn" class="w-12 h-12 rounded-xl bg-theme text-white flex items-center justify-center transition-transform hover:scale-105 active:scale-95 shadow-md shrink-0" title="히스토리 & 통계 / 테마 & 설정">
+                        <!-- 모바일엔 하단 탭바에 이미 "설정" 탭이 있어 중복이라 숨긴다 -->
+                        <button id="desktop-drawer-btn" class="hidden lg:flex w-12 h-12 rounded-xl bg-theme text-white items-center justify-center transition-transform hover:scale-105 active:scale-95 shadow-md shrink-0" title="히스토리 & 통계 / 테마 & 설정">
                             <i class="fa-solid fa-gear text-lg"></i>
                         </button>
                     </div>
@@ -1014,12 +1021,14 @@
                 // 이름을 카드 가운데 정렬하기 위해 grid(드래그 아이콘 / 이름(1fr, 가운데 정렬) /
                 // 삭제 버튼) 3열로 구성한다 — flex justify-between이면 이름이 항상 왼쪽에
                 // 붙어버려서 가운데로 오지 않는다.
-                li.className = 'grid grid-cols-[auto_1fr_auto] items-center gap-3 sm:gap-4 min-w-[220px] sm:min-w-[280px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 sm:p-5 rounded-xl shadow-sm hover:shadow-md hover:border-theme transition-shadow group cursor-move';
+                // 모바일에서는 카드 폭을 "50% - 간격 절반"으로 줘서 한 줄에 정확히 2명씩
+                // 보이게 하고, 화면이 커지면(sm 이상) 글자 크기에 맞춰 큰 고정폭으로 바꾼다.
+                li.className = 'grid grid-cols-[auto_1fr_auto] items-center gap-2 sm:gap-4 min-w-[calc(50%-4px)] sm:min-w-[280px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 sm:p-5 rounded-xl shadow-sm hover:shadow-md hover:border-theme transition-shadow group cursor-move';
                 li.title = '클릭하여 정보 수정';
                 li.dataset.id = p.name;
                 li.innerHTML = `
                     <i class="fa-solid fa-grip-vertical text-slate-300 dark:text-slate-600 group-hover:text-theme transition-colors"></i>
-                    <span class="font-bold text-2xl sm:text-3xl xl:text-4xl text-slate-700 dark:text-slate-200 truncate text-center">${escapeHtml(p.name)}</span>
+                    <span class="font-bold text-lg sm:text-3xl xl:text-4xl text-slate-700 dark:text-slate-200 truncate text-center">${escapeHtml(p.name)}</span>
                     <button type="button" class="remove-participant-btn text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-colors shrink-0" title="삭제">
                         <i class="fa-solid fa-lg fa-xmark"></i>
                     </button>
