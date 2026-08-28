@@ -1039,8 +1039,7 @@
             });
 
             requestAnimationFrame(() => {
-                const fontsReady = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
-                fontsReady.then(fitParticipantList);
+                waitForFonts().then(fitParticipantList);
             });
 
             // Drag & Drop 초기화
@@ -1509,6 +1508,20 @@
 
         let lastTeamResult = null; // 마지막으로 그린 팀 배분 결과 (CSV 내보내기/재열람용)
 
+        // document.fonts.ready는 "지금까지 로딩이 시작된 폰트가 다 끝났다"는 뜻이지,
+        // "이 페이지에 필요한 폰트가 다 준비됐다"는 뜻이 아니다 — 브라우저는 실제로 그
+        // 글꼴/굵기가 화면에 쓰이기 전까진 다운로드 자체를 미루기도 해서, 아직 아무도
+        // Pretendard Bold를 "쓴 적 없는" 첫 렌더링(예: 페이지 열자마자 그려지는 참가자
+        // 명단)에서는 ready가 곧바로 풀려버려 실측이 폴백 글꼴 기준으로 이뤄질 수 있다.
+        // document.fonts.load()로 실제 쓰는 굵기를 명시적으로 요청해 다운로드를 강제하고
+        // 그 완료까지 기다려야, 나중에 진짜 폰트로 바뀌면서 글자 폭이 달라져 잘리는
+        // 문제를 막을 수 있다.
+        const waitForFonts = () => {
+            if (!document.fonts) return Promise.resolve();
+            const load = document.fonts.load ? document.fonts.load('700 16px Pretendard') : Promise.resolve();
+            return Promise.all([load, document.fonts.ready]).catch(() => {});
+        };
+
         // 글씨 크기를 실측(이분 탐색)으로 최대한 키우되, 계산이 혹시 틀리더라도 절대 옆 이름과
         // 겹치지는 않도록 이중 안전장치를 둔다:
         //  1) ul 전체가 아니라 각 li를 "개별로" 검사한다 — 이름 하나가 자기 칸을 넘어 옆 li로
@@ -1518,11 +1531,19 @@
         //     줄바꿈되어 첫 글자만 보이는 문제를 막기 위함)과 overflow:hidden + text-overflow:ellipsis
         //     (그래도 안 맞으면 "..."으로 잘림)를 CSS로 걸어 둔다. 즉 "측정이 완벽하지 않아도 겹침은
         //     구조적으로 불가능"하다.
-        const fitTextToBox = (el, { max = 120, min = 12 } = {}) => {
+        // textSelector: li 자체가 아니라 li 안의 특정 자식(예: 이름 span)이 넘치는지 봐야
+        // 할 때 쓴다 — 그 자식이 자기 자신에게 overflow:hidden(예: truncate)을 걸고 있으면,
+        // 넘친 내용이 그 자식 선에서 조용히 잘려서 li까지 전달되지 않아 li.scrollWidth만
+        // 봐서는 "안 넘친 것"으로 착각하게 된다(측정이 항상 최대 크기로 수렴하는 버그).
+        const fitTextToBox = (el, { max = 120, min = 12, textSelector = null } = {}) => {
             const items = [...el.querySelectorAll('li')];
             const fits = (size) => {
                 el.style.fontSize = size + 'px';
-                return items.every(li => li.scrollWidth <= li.clientWidth + 1 && li.scrollHeight <= li.clientHeight + 1);
+                return items.every(li => {
+                    const target = textSelector ? li.querySelector(textSelector) : li;
+                    if (!target) return true;
+                    return target.scrollWidth <= target.clientWidth + 1 && target.scrollHeight <= target.clientHeight + 1;
+                });
             };
             let lo = min, hi = max;
             if (!fits(min)) return min; // 최소 크기로도 안 맞으면(극단적으로 긴 이름 등) 최소로 둔다(overflow-wrap/hidden이 안전망)
@@ -1587,15 +1608,43 @@
             const el = dom.list;
             const count = state.participants.length;
             if (count === 0) return;
-            const maxCols = Math.max(1, Math.min(10, count));
-            let bestCols = 1, bestSize = 0;
-            for (let cols = 1; cols <= maxCols; cols++) {
+
+            // 인원이 많을 때 열을 1부터 순서대로 시도하면, "그 어떤 열 개수로도 다 안
+            // 맞는" 상황에서 최소 크기 폴백이 여러 열 개수에서 동시에 나오고, 그중
+            // 가장 먼저 시도한(=가장 극단적인, 예: 1열에 수십 줄) 조합이 그대로 선택돼
+            // 버려서 줄 높이가 거의 0이 되어 글자가 위아래로 겹치는 사고가 난다. 그래서
+            // 컨테이너의 가로세로 비율로 "적당히 정사각형에 가까운" 열 개수를 먼저
+            // 추정하고, 그 주변 범위만 후보로 시도해 극단적인 열 개수 자체를 배제한다.
+            const { width: cw, height: ch } = el.parentElement.getBoundingClientRect();
+            const aspect = cw > 0 && ch > 0 ? cw / ch : 1;
+            const idealCols = Math.max(1, Math.round(Math.sqrt(count * aspect)));
+            const minColsTry = Math.max(1, idealCols - 3);
+            const maxColsTry = Math.min(count, idealCols + 4);
+
+            let bestCols = idealCols, bestSize = 0;
+            for (let cols = minColsTry; cols <= maxColsTry; cols++) {
                 applyParticipantGrid(el, cols, count);
-                const size = fitTextToBox(el, { max: 56, min: 14 });
-                if (size > bestSize) { bestSize = size; bestCols = cols; }
+                const size = fitTextToBox(el, { max: 56, min: 14, textSelector: 'span' });
+                const rows = Math.ceil(count / cols);
+                const bestRows = Math.ceil(count / bestCols);
+                // 폰트 크기가 더 크면 우선, 같으면 줄 수가 더 적은(덜 극단적인) 쪽을 우선한다.
+                if (size > bestSize || (size === bestSize && rows < bestRows)) {
+                    bestSize = size; bestCols = cols;
+                }
             }
             applyParticipantGrid(el, bestCols, count);
             el.style.fontSize = bestSize + 'px';
+
+            // fitTextToBox의 이분 탐색은 오차 허용(+1px)이 있어서, 다른 이름보다 살짝
+            // 더 긴 이름 하나만 경계선에서 놓치는 경우가 드물게 생긴다. 최종 확정된
+            // 글씨 크기에서 "정말로 하나도 안 잘리는지" 오차 없이 다시 검사해서, 잘리는
+            // 이름이 하나라도 있으면 다 맞을 때까지 1px씩 더 줄인다.
+            const nameSpans = [...el.querySelectorAll('li span')];
+            let size = bestSize;
+            while (size > 10 && nameSpans.some(span => span.scrollWidth > span.clientWidth)) {
+                size -= 1;
+                el.style.fontSize = size + 'px';
+            }
         };
 
         let participantResizeDebounce = null;
@@ -1663,8 +1712,7 @@
             // 아직 로딩 중일 때 측정하면 폭이 다른 폴백 글꼴 기준으로 계산될 수 있어, 폰트 로딩이
             // 끝난 뒤에 측정하도록 기다린다.
             requestAnimationFrame(() => {
-                const fontsReady = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
-                fontsReady.then(refitAllTeamCards);
+                waitForFonts().then(refitAllTeamCards);
             });
 
             dom.closeModal.style.display = 'flex';
@@ -1926,6 +1974,11 @@
         if (hadCorruptedStorage) {
             showToast('저장된 데이터 일부가 손상되어 초기화했습니다. 명단을 확인해주세요.', 'error');
         }
+
+        // 참가자 명단은 페이지가 열리자마자(=가장 먼저) 렌더링되는 화면이라, waitForFonts()로도
+        // 못 잡아내는 아주 드문 타이밍에 폴백 글꼴로 실측될 가능성에 대비해, 전체 리소스
+        // 로딩이 끝난 뒤 한 번 더 다시 맞춘다(이중 안전장치).
+        window.addEventListener('load', () => waitForFonts().then(fitParticipantList));
 
     </script>
 </body>
