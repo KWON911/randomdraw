@@ -1020,11 +1020,11 @@
                 // 붙어버려서 가운데로 오지 않는다.
                 // 글씨 크기는 여기서 고정하지 않는다 — fitParticipantList()가 인원수에 맞춰
                 // ul의 font-size를 실측으로 정하면 이 span은 그 값을 그대로 물려받는다.
-                li.className = 'grid grid-cols-[auto_1fr_auto] items-center gap-2 sm:gap-3 min-w-0 min-h-0 overflow-hidden bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 rounded-xl shadow-sm hover:shadow-md hover:border-theme transition-shadow group cursor-move';
+                li.className = 'grid grid-cols-[auto_1fr_auto] items-center gap-2 sm:gap-3 min-w-0 min-h-0 overflow-hidden bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 rounded-xl shadow-sm hover:shadow-md hover:border-theme transition-shadow group cursor-pointer';
                 li.title = '클릭하여 정보 수정';
                 li.dataset.id = p.name;
                 li.innerHTML = `
-                    <i class="fa-solid fa-grip-vertical text-sm text-slate-300 dark:text-slate-600 group-hover:text-theme transition-colors"></i>
+                    <i class="drag-handle fa-solid fa-grip-vertical text-sm text-slate-300 dark:text-slate-600 group-hover:text-theme transition-colors cursor-move"></i>
                     <span class="font-bold text-slate-700 dark:text-slate-200 text-center" style="overflow:hidden;white-space:nowrap;">${escapeHtml(p.name)}</span>
                     <button type="button" class="remove-participant-btn text-slate-300 dark:text-slate-500 opacity-50 hover:opacity-100 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 w-6 h-6 rounded-full flex items-center justify-center transition-colors shrink-0" title="삭제">
                         <i class="fa-solid fa-xmark text-xs"></i>
@@ -1047,6 +1047,9 @@
             sortableInstance = new Sortable(dom.list, {
                 animation: 150,
                 ghostClass: 'sortable-ghost',
+                handle: '.drag-handle', // 카드 전체가 아니라 손잡이 아이콘에서만 드래그가
+                                        // 시작되게 해서, 모바일에서 카드를 터치해 스크롤할 때
+                                        // 순서 변경으로 오인되지 않게 한다.
                 onEnd: (evt) => {
                     const movedItem = state.participants.splice(evt.oldIndex, 1)[0];
                     state.participants.splice(evt.newIndex, 0, movedItem);
