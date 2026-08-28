@@ -191,22 +191,11 @@
 
                 <!-- Input & Toolbar -->
                 <div class="px-8 lg:-mt-6 relative z-20 shrink-0 pt-6 lg:pt-0">
-                    <form id="add-form" class="bg-white dark:bg-slate-900 p-2.5 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 flex flex-wrap lg:flex-nowrap gap-2">
-                        <input type="text" id="name-input" class="w-full lg:flex-1 lg:w-auto min-w-0 px-4 py-3 text-lg bg-slate-50 dark:bg-slate-800 rounded-xl text-slate-800 dark:text-slate-100 focus:outline-none focus-ring-theme transition-shadow placeholder-slate-400" placeholder="참가자 이름 입력 후 Enter" autocomplete="off">
-                        <div class="flex w-full lg:w-auto lg:contents gap-2">
-                            <div class="flex gap-1 shrink-0">
-                                <button type="button" data-gender="M" class="gender-toggle-btn w-12 rounded-xl font-bold text-sm bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 transition-colors">남</button>
-                                <button type="button" data-gender="F" class="gender-toggle-btn w-12 rounded-xl font-bold text-sm bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 transition-colors">여</button>
-                            </div>
-                            <div class="flex gap-1 shrink-0">
-                                <button type="button" data-ability="상" class="ability-toggle-btn w-8 rounded-xl font-bold text-[10px] bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 transition-colors">상</button>
-                                <button type="button" data-ability="중" class="ability-toggle-btn w-8 rounded-xl font-bold text-[10px] bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 transition-colors">중</button>
-                                <button type="button" data-ability="하" class="ability-toggle-btn w-8 rounded-xl font-bold text-[10px] bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 transition-colors">하</button>
-                            </div>
-                            <button type="submit" class="flex-1 lg:flex-none lg:w-16 bg-theme text-white rounded-xl flex items-center justify-center transition-transform hover:scale-105 active:scale-95 shadow-md shrink-0">
-                                <i class="fa-solid fa-plus text-xl"></i>
-                            </button>
-                        </div>
+                    <form id="add-form" class="bg-white dark:bg-slate-900 p-2.5 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 flex gap-2">
+                        <input type="text" id="name-input" class="flex-1 min-w-0 px-4 py-3 text-lg bg-slate-50 dark:bg-slate-800 rounded-xl text-slate-800 dark:text-slate-100 focus:outline-none focus-ring-theme transition-shadow placeholder-slate-400" placeholder="참가자 이름 입력 후 Enter (성별/등급은 등급 관리에서 나중에 설정)" autocomplete="off">
+                        <button type="submit" class="w-16 bg-theme text-white rounded-xl flex items-center justify-center transition-transform hover:scale-105 active:scale-95 shadow-md shrink-0">
+                            <i class="fa-solid fa-plus text-xl"></i>
+                        </button>
                     </form>
                 </div>
 
@@ -297,7 +286,7 @@
                         <button id="export-list" class="flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-300 bg-slate-100 dark:bg-slate-900 hover:bg-theme hover:text-white dark:hover:bg-theme rounded-lg py-2 transition-colors" title="현재 명단 CSV로 내보내기"><i class="fa-solid fa-file-export"></i>내보내기</button>
                         <button id="reset-list" class="flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-300 bg-slate-100 dark:bg-slate-900 hover:bg-rose-500 hover:text-white rounded-lg py-2 transition-colors"><i class="fa-solid fa-rotate-right"></i>명단 초기화</button>
                         <button id="restore-excluded" disabled class="flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-300 bg-slate-100 dark:bg-slate-900 hover:bg-theme hover:text-white dark:hover:bg-theme rounded-lg py-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-slate-100 disabled:hover:text-slate-500 dark:disabled:hover:bg-slate-900 dark:disabled:hover:text-slate-300" title="제외된 참가자를 명단으로 복원"><i class="fa-solid fa-clock-rotate-left"></i>전체 복원<span id="excluded-count"></span></button>
-                        <button id="ability-modal-btn" class="col-span-2 flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-300 bg-slate-100 dark:bg-slate-900 hover:bg-theme hover:text-white dark:hover:bg-theme rounded-lg py-2 transition-colors"><i class="fa-solid fa-ranking-star"></i>등급 관리</button>
+                        <button id="ability-modal-btn" class="col-span-2 flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-300 bg-slate-100 dark:bg-slate-900 hover:bg-theme hover:text-white dark:hover:bg-theme rounded-lg py-2 transition-colors"><i class="fa-solid fa-ranking-star"></i>등급 · 성별 관리</button>
                     </div>
                     <span class="inline-block text-sm bg-slate-100 dark:bg-slate-700 px-3 py-1.5 rounded-lg font-bold text-slate-600 dark:text-slate-300">
                         총 <span id="count-badge" class="text-theme text-lg">0</span>명
@@ -437,16 +426,16 @@
         </div>
     </div>
 
-    <!-- 등급 관리 모달 (신체능력 상/중/하) -->
+    <!-- 등급·성별 관리 모달 (메인 화면은 이름만 빠르게 입력하므로, 성별/신체능력은 여기서 나중에 지정한다) -->
     <div id="ability-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[97] hidden flex items-center justify-center p-6">
         <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-8 w-full max-w-lg max-h-[80vh] flex flex-col border border-slate-200 dark:border-slate-700">
             <div class="flex justify-between items-center mb-4 shrink-0">
-                <h3 class="text-lg font-bold text-slate-800 dark:text-white"><i class="fa-solid fa-ranking-star text-theme mr-2"></i>등급 관리</h3>
+                <h3 class="text-lg font-bold text-slate-800 dark:text-white"><i class="fa-solid fa-ranking-star text-theme mr-2"></i>등급 · 성별 관리</h3>
                 <button id="ability-modal-close-btn" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 w-8 h-8 rounded-full flex items-center justify-center transition-colors">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
-            <p class="text-xs text-slate-400 mb-4 shrink-0">여기서 설정한 등급은 참가자 명단 화면에는 표시되지 않으며, 팀 나누기의 신체능력 균형 배분에만 사용됩니다.</p>
+            <p class="text-xs text-slate-400 mb-4 shrink-0">여기서 설정한 성별/등급은 참가자 명단 화면에는 표시되지 않으며, 뽑기 대상 필터와 팀 나누기의 균형 배분에 사용됩니다.</p>
             <ul id="ability-modal-list" class="space-y-2 overflow-y-auto flex-1 pr-1">
                 <!-- 동적 렌더링 -->
             </ul>
@@ -497,8 +486,6 @@
             importReplaceBtn: document.getElementById('import-replace-btn'),
             importMergeBtn: document.getElementById('import-merge-btn'),
             importCancelBtn: document.getElementById('import-cancel-btn'),
-            genderToggleBtns: document.querySelectorAll('.gender-toggle-btn'),
-            abilityToggleBtns: document.querySelectorAll('.ability-toggle-btn'),
             genderModeSelect: document.getElementById('gender-mode-select'),
             teamSettingsPanel: document.getElementById('team-settings-panel'),
             teamSplitToggleBtns: document.querySelectorAll('.team-split-toggle-btn'),
@@ -994,85 +981,74 @@
             });
         };
 
-        let selectedGender = null;
-        dom.genderToggleBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const g = btn.dataset.gender;
-                selectedGender = selectedGender === g ? null : g;
-                dom.genderToggleBtns.forEach(b => {
-                    const active = b.dataset.gender === selectedGender;
-                    const activeClasses = b.dataset.gender === 'M'
-                        ? ['bg-blue-500', 'text-white']
-                        : ['bg-pink-500', 'text-white'];
-                    const idleClasses = ['bg-slate-50', 'dark:bg-slate-800', 'text-slate-400', 'dark:text-slate-500'];
-                    b.classList.remove(...activeClasses, ...idleClasses);
-                    b.classList.add(...(active ? activeClasses : idleClasses));
-                });
-            });
-        });
-
-        const resetGenderToggle = () => {
-            selectedGender = null;
-            dom.genderToggleBtns.forEach(b => {
-                b.classList.remove('bg-blue-500', 'bg-pink-500', 'text-white');
-                b.classList.add('bg-slate-50', 'dark:bg-slate-800', 'text-slate-400', 'dark:text-slate-500');
-            });
-        };
-
-        let selectedAbility = null;
-        dom.abilityToggleBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const a = btn.dataset.ability;
-                selectedAbility = selectedAbility === a ? null : a;
-                dom.abilityToggleBtns.forEach(b => {
-                    const active = b.dataset.ability === selectedAbility;
-                    const activeClasses = ['bg-theme', 'text-white'];
-                    const idleClasses = ['bg-slate-50', 'dark:bg-slate-800', 'text-slate-400', 'dark:text-slate-500'];
-                    b.classList.remove(...activeClasses, ...idleClasses);
-                    b.classList.add(...(active ? activeClasses : idleClasses));
-                });
-            });
-        });
-
-        const resetAbilityToggle = () => {
-            selectedAbility = null;
-            dom.abilityToggleBtns.forEach(b => {
-                b.classList.remove('bg-theme', 'text-white');
-                b.classList.add('bg-slate-50', 'dark:bg-slate-800', 'text-slate-400', 'dark:text-slate-500');
-            });
-        };
+        // 메인 화면에서는 이름만 빠르게 입력하고, 성별/등급은 이 모달(설정 서랍의
+        // "등급 · 성별 관리" 버튼으로 연다)에서 나중에 지정한다(새로 추가된 참가자는
+        // 둘 다 미지정 상태로 시작).
 
         const renderAbilityModal = () => {
             if (state.participants.length === 0) {
                 dom.abilityModalList.innerHTML = `<li class="text-center text-slate-400 py-10 text-sm">참가자가 없습니다.</li>`;
                 return;
             }
-            dom.abilityModalList.innerHTML = state.participants.map(p => {
-                const genderBadge = p.gender === 'M'
-                    ? '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 shrink-0">남</span>'
-                    : p.gender === 'F'
-                    ? '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-pink-100 text-pink-600 dark:bg-pink-500/20 dark:text-pink-400 shrink-0">여</span>'
-                    : '';
-                return `
-                    <li class="flex items-center justify-between gap-3 bg-slate-50 dark:bg-slate-900 p-3 rounded-xl">
-                        <div class="flex items-center gap-2 overflow-hidden">
-                            <span class="font-bold text-slate-700 dark:text-slate-200 truncate">${escapeHtml(p.name)}</span>
-                            ${genderBadge}
+            // 행은 이름이 아니라 "현재 렌더링 시점의 배열 인덱스"로 식별한다 — 이름 자체를
+            // 이 모달에서 고칠 수 있으므로, 이름을 키로 쓰면 수정 직후 다른 컨트롤들이 옛
+            // 이름을 참조하게 되어 엉뚱한 사람이 바뀌는 문제가 생긴다.
+            dom.abilityModalList.innerHTML = state.participants.map((p, idx) => `
+                    <li class="flex items-center justify-between gap-2 bg-slate-50 dark:bg-slate-900 p-3 rounded-xl">
+                        <input type="text" data-index="${idx}" class="name-edit-input font-bold text-slate-700 dark:text-slate-200 bg-transparent border-b border-transparent hover:border-slate-300 dark:hover:border-slate-600 focus:border-theme focus:outline-none px-0.5 py-0.5 min-w-0 flex-1" value="${escapeHtml(p.name)}" title="이름 수정">
+                        <div class="flex items-center gap-2 shrink-0">
+                            <select data-index="${idx}" class="gender-select text-sm font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 focus:outline-none focus-ring-theme text-slate-700 dark:text-slate-200">
+                                <option value="" ${!p.gender ? 'selected' : ''}>미지정</option>
+                                <option value="M" ${p.gender === 'M' ? 'selected' : ''}>남</option>
+                                <option value="F" ${p.gender === 'F' ? 'selected' : ''}>여</option>
+                            </select>
+                            <select data-index="${idx}" class="ability-select text-sm font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 focus:outline-none focus-ring-theme text-slate-700 dark:text-slate-200">
+                                <option value="" ${!p.ability ? 'selected' : ''}>미지정</option>
+                                <option value="상" ${p.ability === '상' ? 'selected' : ''}>상</option>
+                                <option value="중" ${p.ability === '중' ? 'selected' : ''}>중</option>
+                                <option value="하" ${p.ability === '하' ? 'selected' : ''}>하</option>
+                            </select>
                         </div>
-                        <select data-name="${escapeHtml(p.name)}" class="ability-select text-sm font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 focus:outline-none focus-ring-theme text-slate-700 dark:text-slate-200">
-                            <option value="" ${!p.ability ? 'selected' : ''}>미지정</option>
-                            <option value="상" ${p.ability === '상' ? 'selected' : ''}>상</option>
-                            <option value="중" ${p.ability === '중' ? 'selected' : ''}>중</option>
-                            <option value="하" ${p.ability === '하' ? 'selected' : ''}>하</option>
-                        </select>
                     </li>
-                `;
-            }).join('');
+                `).join('');
+
+            dom.abilityModalList.querySelectorAll('.name-edit-input').forEach(input => {
+                const commitRename = () => {
+                    const p = state.participants[Number(input.dataset.index)];
+                    if (!p) return;
+                    const newName = input.value.trim();
+                    if (!newName || newName === p.name) { input.value = p.name; return; }
+                    if (state.participants.some(other => other !== p && other.name === newName)) {
+                        showToast('이미 명단에 있는 이름입니다.', 'error');
+                        input.value = p.name;
+                        return;
+                    }
+                    p.name = newName;
+                    saveState('participants');
+                    renderParticipants();
+                    renderAbilityModal();
+                    showToast('이름을 수정했습니다.', 'success');
+                };
+                input.addEventListener('blur', commitRename);
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+                });
+            });
+
+            dom.abilityModalList.querySelectorAll('.gender-select').forEach(sel => {
+                sel.addEventListener('change', (e) => {
+                    const p = state.participants[Number(e.target.dataset.index)];
+                    if (p) {
+                        p.gender = e.target.value || null;
+                        saveState('participants');
+                        renderParticipants();
+                    }
+                });
+            });
 
             dom.abilityModalList.querySelectorAll('.ability-select').forEach(sel => {
                 sel.addEventListener('change', (e) => {
-                    const name = e.target.dataset.name;
-                    const p = state.participants.find(p => p.name === name);
+                    const p = state.participants[Number(e.target.dataset.index)];
                     if (p) {
                         p.ability = e.target.value || null;
                         saveState('participants');
@@ -1096,11 +1072,9 @@
                 showToast('이미 명단에 있는 이름입니다.', 'error');
                 return;
             }
-            state.participants.push({ name, gender: selectedGender, ability: selectedAbility });
+            state.participants.push({ name, gender: null, ability: null });
             saveState('participants');
             dom.input.value = '';
-            resetGenderToggle();
-            resetAbilityToggle();
             renderParticipants();
             playSound('click');
         });
