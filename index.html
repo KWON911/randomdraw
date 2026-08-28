@@ -193,45 +193,50 @@
 
             <!-- Draw Button -->
             <div class="p-8 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-700 shrink-0">
-                <div id="team-settings-panel" class="hidden mb-4 p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-700 space-y-3">
-                    <div class="flex items-center gap-2">
+                <div id="team-settings-panel" class="hidden mb-3 p-3 max-w-2xl mx-auto bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-700">
+                    <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
                         <div class="flex gap-1 shrink-0">
                             <button type="button" data-split="count" class="team-split-toggle-btn px-3 py-1.5 rounded-lg font-bold text-xs transition-colors">팀 개수로</button>
                             <button type="button" data-split="size" class="team-split-toggle-btn px-3 py-1.5 rounded-lg font-bold text-xs transition-colors">팀당 인원으로</button>
                         </div>
-                        <input type="number" id="team-number-input" min="2" class="flex-1 min-w-0 px-3 py-1.5 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus-ring-theme text-slate-700 dark:text-slate-200">
+                        <input type="number" id="team-number-input" min="2" class="w-20 shrink-0 px-3 py-1.5 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus-ring-theme text-slate-700 dark:text-slate-200">
+                        <label class="flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300 cursor-pointer select-none">
+                            <input type="checkbox" id="balance-gender-check" class="w-4 h-4 accent-theme-primary rounded">
+                            성별 균형 배분
+                        </label>
+                        <label class="flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300 cursor-pointer select-none">
+                            <input type="checkbox" id="balance-ability-check" class="w-4 h-4 accent-theme-primary rounded">
+                            신체능력 균형 배분
+                        </label>
                     </div>
-                    <label class="flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300 cursor-pointer select-none">
-                        <input type="checkbox" id="balance-gender-check" class="w-4 h-4 accent-theme-primary rounded">
-                        성별 균형 배분
-                    </label>
-                    <label class="flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300 cursor-pointer select-none">
-                        <input type="checkbox" id="balance-ability-check" class="w-4 h-4 accent-theme-primary rounded">
-                        신체능력 균형 배분
-                    </label>
                 </div>
-                <div class="flex flex-wrap items-center gap-3">
-                    <form id="add-form" class="flex gap-2 flex-1 min-w-[240px]">
-                        <input type="text" id="name-input" class="flex-1 min-w-0 px-4 py-3 bg-slate-50 dark:bg-slate-800 rounded-xl text-slate-800 dark:text-slate-100 focus:outline-none focus-ring-theme transition-shadow placeholder-slate-400 border border-slate-200 dark:border-slate-700" placeholder="참가자 이름 입력 후 Enter (성별/등급은 등급 관리에서 나중에 설정)" autocomplete="off">
+                <!-- 왼쪽 칸(이름 추가)과 오른쪽 칸(총원/대상)을 1fr씩 똑같이 주고, 각 칸
+                     안에서 버튼 쪽으로 붙여서(justify-end / justify-start) 시작 버튼을
+                     중심으로 좌우가 대칭으로 균형 잡히게 만든다. -->
+                <div class="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] items-center gap-3">
+                    <form id="add-form" class="flex gap-2 w-full lg:w-auto lg:max-w-[280px] lg:justify-self-end">
+                        <input type="text" id="name-input" class="flex-1 min-w-0 px-4 py-3 bg-slate-50 dark:bg-slate-800 rounded-xl text-slate-800 dark:text-slate-100 focus:outline-none focus-ring-theme transition-shadow placeholder-slate-400 border border-slate-200 dark:border-slate-700" placeholder="이름 입력" autocomplete="off">
                         <button type="submit" class="w-12 bg-theme text-white rounded-xl flex items-center justify-center transition-transform hover:scale-105 active:scale-95 shadow-md shrink-0" title="참가자 추가">
                             <i class="fa-solid fa-plus text-lg"></i>
                         </button>
                     </form>
-                    <span class="text-sm bg-slate-100 dark:bg-slate-700 px-3 py-1.5 rounded-lg font-bold text-slate-600 dark:text-slate-300 shrink-0">
-                        총 <span id="count-badge-home" class="text-theme text-lg">0</span>명
-                    </span>
-                    <select id="gender-mode-select" aria-label="뽑기 대상" class="text-sm font-semibold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 focus:outline-none focus-ring-theme text-slate-700 dark:text-slate-200 shrink-0">
-                        <option value="all">전체</option>
-                        <option value="M">남자만</option>
-                        <option value="F">여자만</option>
-                        <option value="alternate">번갈아가며</option>
-                        <option value="team">팀 나누기</option>
-                    </select>
-                    <button id="draw-btn" disabled class="flex-1 min-w-[200px] h-14 bg-theme-gradient text-white text-lg font-black rounded-2xl shadow-xl hover:shadow-2xl hover:shadow-theme/30 transform transition-all hover:-translate-y-1 active:translate-y-0 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-3 tracking-widest overflow-hidden relative group">
+                    <button id="draw-btn" disabled class="w-64 max-w-full h-12 bg-theme-gradient text-white text-base font-black rounded-2xl shadow-xl hover:shadow-2xl hover:shadow-theme/30 transform transition-all hover:-translate-y-1 active:translate-y-0 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2 tracking-widest overflow-hidden relative group justify-self-center">
                         <div class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
-                        <i class="fa-solid fa-wand-magic-sparkles text-xl relative z-10"></i>
-                        <span class="relative z-10">운명의 뽑기 시작!</span>
+                        <i class="fa-solid fa-wand-magic-sparkles text-lg relative z-10"></i>
+                        <span class="relative z-10">뽑기 시작!</span>
                     </button>
+                    <div class="flex flex-wrap items-center gap-3 justify-center lg:justify-start">
+                        <span class="flex items-center bg-slate-100 dark:bg-slate-700 px-4 py-3 rounded-xl font-bold text-slate-600 dark:text-slate-300 shrink-0">
+                            총 <span id="count-badge-home" class="text-theme text-lg mx-1">0</span>명
+                        </span>
+                        <select id="gender-mode-select" aria-label="뽑기 대상" class="font-semibold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 focus:outline-none focus-ring-theme text-slate-700 dark:text-slate-200 shrink-0">
+                            <option value="all">전체</option>
+                            <option value="M">남자만</option>
+                            <option value="F">여자만</option>
+                            <option value="alternate">번갈아가며</option>
+                            <option value="team">팀 나누기</option>
+                        </select>
+                    </div>
                 </div>
             </div>
         </main>
@@ -1014,22 +1019,21 @@
 
             state.participants.forEach((p, idx) => {
                 const li = document.createElement('li');
-                li.className = 'flex justify-between items-center gap-4 min-w-[220px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-xl shadow-sm hover:shadow-md hover:border-theme transition-shadow group cursor-move';
+                // TV/프로젝터 화면에서 학생들도 자기 이름을 알아볼 수 있도록 이름 글씨와
+                // 카드 자체를 크게 키운다(1920x1080에서 약 30명이 화면을 채우는 정도를
+                // 기준으로 잡았다). 번호는 순서일 뿐 학생에게 의미가 없어 카드에서 뺐고,
+                // 성별도 학생 화면에 노출할 정보가 아니라 표시하지 않는다(등급 · 성별
+                // 관리에서만 확인/수정).
+                // 이름을 카드 가운데 정렬하기 위해 grid(드래그 아이콘 / 이름(1fr, 가운데 정렬) /
+                // 삭제 버튼) 3열로 구성한다 — flex justify-between이면 이름이 항상 왼쪽에
+                // 붙어버려서 가운데로 오지 않는다.
+                li.className = 'grid grid-cols-[auto_1fr_auto] items-center gap-3 sm:gap-4 min-w-[220px] sm:min-w-[280px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 sm:p-5 rounded-xl shadow-sm hover:shadow-md hover:border-theme transition-shadow group cursor-move';
                 li.title = '클릭하여 정보 수정';
                 li.dataset.id = p.name;
-                const genderBadge = p.gender === 'M'
-                    ? '<span class="text-xs font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 shrink-0">남</span>'
-                    : p.gender === 'F'
-                    ? '<span class="text-xs font-bold px-2 py-0.5 rounded bg-pink-100 text-pink-600 dark:bg-pink-500/20 dark:text-pink-400 shrink-0">여</span>'
-                    : '';
                 li.innerHTML = `
-                    <div class="flex items-center gap-3 overflow-hidden">
-                        <i class="fa-solid fa-grip-vertical text-slate-300 dark:text-slate-600 group-hover:text-theme transition-colors"></i>
-                        <div class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center shrink-0 text-theme font-bold">${idx + 1}</div>
-                        <span class="font-bold text-lg text-slate-700 dark:text-slate-200 truncate">${escapeHtml(p.name)}</span>
-                        ${genderBadge}
-                    </div>
-                    <button type="button" class="remove-participant-btn text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 w-10 h-10 rounded-full flex items-center justify-center transition-colors shrink-0" title="삭제">
+                    <i class="fa-solid fa-grip-vertical text-slate-300 dark:text-slate-600 group-hover:text-theme transition-colors"></i>
+                    <span class="font-bold text-2xl sm:text-3xl xl:text-4xl text-slate-700 dark:text-slate-200 truncate text-center">${escapeHtml(p.name)}</span>
+                    <button type="button" class="remove-participant-btn text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-colors shrink-0" title="삭제">
                         <i class="fa-solid fa-lg fa-xmark"></i>
                     </button>
                 `;
