@@ -178,7 +178,7 @@
 
                 <!-- Participant List -->
                 <div class="flex-1 overflow-y-auto p-8 pt-6 relative bg-slate-50/50 dark:bg-slate-800/50">
-                    <ul id="participant-list" class="flex flex-wrap content-start gap-3 pb-4">
+                    <ul id="participant-list" class="flex flex-wrap content-start justify-center gap-3 pb-4">
                         <!-- 동적 렌더링 -->
                     </ul>
                     <div id="empty-state" class="absolute inset-0 flex flex-col items-center justify-center text-slate-400">
@@ -461,6 +461,44 @@
         </div>
     </div>
 
+    <!-- 참가자 카드 클릭 시 뜨는 개별 정보 수정 모달 -->
+    <div id="edit-participant-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[97] hidden flex items-center justify-center p-6">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-8 w-full max-w-sm border border-slate-200 dark:border-slate-700">
+            <div class="flex justify-between items-center mb-5">
+                <h3 class="text-lg font-bold text-slate-800 dark:text-white"><i class="fa-solid fa-user-pen text-theme mr-2"></i>참가자 정보 수정</h3>
+                <button id="edit-participant-close-btn" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 w-8 h-8 rounded-full flex items-center justify-center transition-colors">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form id="edit-participant-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 mb-1.5 uppercase tracking-wider">이름</label>
+                    <input type="text" id="edit-participant-name" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus-ring-theme text-slate-700 dark:text-slate-200 font-bold" autocomplete="off">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 mb-1.5 uppercase tracking-wider">성별</label>
+                        <select id="edit-participant-gender" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus-ring-theme text-slate-700 dark:text-slate-200 font-semibold">
+                            <option value="">미지정</option>
+                            <option value="M">남</option>
+                            <option value="F">여</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 mb-1.5 uppercase tracking-wider">등급</label>
+                        <select id="edit-participant-ability" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus-ring-theme text-slate-700 dark:text-slate-200 font-semibold">
+                            <option value="">미지정</option>
+                            <option value="상">상</option>
+                            <option value="중">중</option>
+                            <option value="하">하</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="w-full py-3 bg-theme text-white rounded-xl font-bold hover:bg-[var(--theme-primary-hover)] transition-colors">저장</button>
+            </form>
+        </div>
+    </div>
+
     <!-- 공용 확인 모달 (네이티브 confirm() 대체) -->
     <div id="confirm-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[97] hidden flex items-center justify-center p-6">
         <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-8 w-full max-w-md border border-slate-200 dark:border-slate-700">
@@ -520,6 +558,12 @@
             abilityModal: document.getElementById('ability-modal'),
             abilityModalList: document.getElementById('ability-modal-list'),
             abilityModalCloseBtn: document.getElementById('ability-modal-close-btn'),
+            editParticipantModal: document.getElementById('edit-participant-modal'),
+            editParticipantCloseBtn: document.getElementById('edit-participant-close-btn'),
+            editParticipantForm: document.getElementById('edit-participant-form'),
+            editParticipantName: document.getElementById('edit-participant-name'),
+            editParticipantGender: document.getElementById('edit-participant-gender'),
+            editParticipantAbility: document.getElementById('edit-participant-ability'),
 
             // 모달/오버레이
             resultOverlay: document.getElementById('result-overlay'),
@@ -970,25 +1014,30 @@
 
             state.participants.forEach((p, idx) => {
                 const li = document.createElement('li');
-                li.className = 'flex justify-between items-center gap-4 min-w-[160px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3.5 rounded-xl shadow-sm hover:shadow-md transition-shadow group cursor-move';
+                li.className = 'flex justify-between items-center gap-4 min-w-[220px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-xl shadow-sm hover:shadow-md hover:border-theme transition-shadow group cursor-move';
+                li.title = '클릭하여 정보 수정';
                 li.dataset.id = p.name;
                 const genderBadge = p.gender === 'M'
-                    ? '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 shrink-0">남</span>'
+                    ? '<span class="text-xs font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 shrink-0">남</span>'
                     : p.gender === 'F'
-                    ? '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-pink-100 text-pink-600 dark:bg-pink-500/20 dark:text-pink-400 shrink-0">여</span>'
+                    ? '<span class="text-xs font-bold px-2 py-0.5 rounded bg-pink-100 text-pink-600 dark:bg-pink-500/20 dark:text-pink-400 shrink-0">여</span>'
                     : '';
                 li.innerHTML = `
                     <div class="flex items-center gap-3 overflow-hidden">
                         <i class="fa-solid fa-grip-vertical text-slate-300 dark:text-slate-600 group-hover:text-theme transition-colors"></i>
-                        <div class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center shrink-0 text-theme font-bold text-sm">${idx + 1}</div>
-                        <span class="font-bold text-slate-700 dark:text-slate-200 truncate">${escapeHtml(p.name)}</span>
+                        <div class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center shrink-0 text-theme font-bold">${idx + 1}</div>
+                        <span class="font-bold text-lg text-slate-700 dark:text-slate-200 truncate">${escapeHtml(p.name)}</span>
                         ${genderBadge}
                     </div>
-                    <button type="button" class="remove-participant-btn text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 w-9 h-9 rounded-full flex items-center justify-center transition-colors shrink-0" title="삭제">
-                        <i class="fa-solid fa-xmark"></i>
+                    <button type="button" class="remove-participant-btn text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 w-10 h-10 rounded-full flex items-center justify-center transition-colors shrink-0" title="삭제">
+                        <i class="fa-solid fa-lg fa-xmark"></i>
                     </button>
                 `;
-                li.querySelector('.remove-participant-btn').addEventListener('click', () => removeParticipant(p.name));
+                li.querySelector('.remove-participant-btn').addEventListener('click', (e) => {
+                    e.stopPropagation(); // 카드 클릭(정보 수정 모달 열기)으로 이어지지 않도록
+                    removeParticipant(p.name);
+                });
+                li.addEventListener('click', () => openEditParticipantModal(idx));
                 dom.list.appendChild(li);
             });
 
@@ -1001,10 +1050,54 @@
                     const movedItem = state.participants.splice(evt.oldIndex, 1)[0];
                     state.participants.splice(evt.newIndex, 0, movedItem);
                     saveState('participants');
-                    renderParticipants(); 
+                    renderParticipants();
                 }
             });
         };
+
+        // 메인 화면에서 참가자 카드를 클릭하면 이름/성별/등급을 한 번에 고칠 수 있는
+        // 간단한 모달을 연다(등급 · 성별 관리 모달까지 안 가도 되도록).
+        let editingParticipantIndex = null;
+
+        const openEditParticipantModal = (idx) => {
+            const p = state.participants[idx];
+            if (!p) return;
+            editingParticipantIndex = idx;
+            dom.editParticipantName.value = p.name;
+            dom.editParticipantGender.value = p.gender || '';
+            dom.editParticipantAbility.value = p.ability || '';
+            dom.editParticipantModal.classList.remove('hidden');
+            dom.editParticipantName.focus();
+        };
+
+        const closeEditParticipantModal = () => {
+            dom.editParticipantModal.classList.add('hidden');
+            editingParticipantIndex = null;
+        };
+
+        dom.editParticipantCloseBtn.addEventListener('click', closeEditParticipantModal);
+
+        dom.editParticipantForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const p = state.participants[editingParticipantIndex];
+            if (!p) { closeEditParticipantModal(); return; }
+            const newName = dom.editParticipantName.value.trim();
+            if (!newName) {
+                showToast('이름을 입력해주세요.', 'error');
+                return;
+            }
+            if (state.participants.some(other => other !== p && other.name === newName)) {
+                showToast('이미 명단에 있는 이름입니다.', 'error');
+                return;
+            }
+            p.name = newName;
+            p.gender = dom.editParticipantGender.value || null;
+            p.ability = dom.editParticipantAbility.value || null;
+            saveState('participants');
+            renderParticipants();
+            closeEditParticipantModal();
+            showToast('참가자 정보를 수정했습니다.', 'success');
+        });
 
         // 메인 화면에서는 이름만 빠르게 입력하고, 성별/등급은 이 모달(설정 서랍의
         // "등급 · 성별 관리" 버튼으로 연다)에서 나중에 지정한다(새로 추가된 참가자는
