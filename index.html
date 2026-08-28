@@ -1634,10 +1634,14 @@
             const minColsTry = Math.max(1, idealCols - 3);
             const maxColsTry = Math.min(count, idealCols + 4);
 
+            // TV/프로젝터를 기준으로 잡은 56px는 휴대폰 화면에서는 카드/글씨가 과도하게
+            // 커 보인다 — 데스크톱 레이아웃 기준(lg breakpoint)보다 좁으면 상한을 낮춘다.
+            const maxFontSize = window.innerWidth < 1024 ? 30 : 56;
+
             let bestCols = idealCols, bestSize = 0;
             for (let cols = minColsTry; cols <= maxColsTry; cols++) {
                 applyParticipantGrid(el, cols, count);
-                const size = fitTextToBox(el, { max: 56, min: 14, textSelector: 'span' });
+                const size = fitTextToBox(el, { max: maxFontSize, min: 14, textSelector: 'span' });
                 const rows = Math.ceil(count / cols);
                 const bestRows = Math.ceil(count / bestCols);
                 // 폰트 크기가 더 크면 우선, 같으면 줄 수가 더 적은(덜 극단적인) 쪽을 우선한다.
