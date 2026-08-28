@@ -1594,12 +1594,22 @@
         // 자동으로 줄어든다 — 인원이 적으면 TV에서 크게, 많아지면 스크롤 없이 다 들어오게
         // 작게. grid-auto-flow는 team-members와 달리 row로 둬서 왼쪽→오른쪽, 위→아래
         // 순서로 읽히게 한다(명단은 등수가 아니라 목록이라 이 순서가 더 자연스럽다).
-        const applyParticipantGrid = (el, cols, count) => {
+        // 화면이 아주 작아지면 최소 글씨(10px)로도 다 못 눌러 담을 수 있다 — 그럴 때도
+        // 무조건 "꽉 채우기"를 고집하면 줄이 서로 겹치거나, 스크롤이 없어서 화면 아래쪽
+        // 참가자를 아예 볼 방법이 없어진다. 그래서 각 줄에 최소 높이를 보장하고, 그
+        // 최소 높이만으로도 전체 높이를 넘으면(fillHeight=false) ul을 꽉 채우지 않고
+        // 자연스러운 높이로 늘어나게 둬서 부모의 overflow-y-auto로 스크롤되게 한다.
+        const MIN_PARTICIPANT_ROW_HEIGHT = 44; // px
+
+        const applyParticipantGrid = (el, cols, count, { fillHeight = true } = {}) => {
             const rows = Math.max(1, Math.ceil(count / cols));
             el.style.display = 'grid';
             el.style.gridAutoFlow = 'row';
+            el.style.height = fillHeight ? '100%' : 'auto';
             el.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
-            el.style.gridTemplateRows = `repeat(${rows}, minmax(0, 1fr))`;
+            el.style.gridTemplateRows = fillHeight
+                ? `repeat(${rows}, minmax(0, 1fr))`
+                : `repeat(${rows}, minmax(${MIN_PARTICIPANT_ROW_HEIGHT}px, auto))`;
             el.style.columnGap = '0.5rem';
             el.style.rowGap = '0.5rem';
         };
@@ -1632,15 +1642,24 @@
                     bestSize = size; bestCols = cols;
                 }
             }
-            applyParticipantGrid(el, bestCols, count);
-            el.style.fontSize = bestSize + 'px';
+
+            // 화면이 너무 작아서 최소 한 줄 높이(MIN_PARTICIPANT_ROW_HEIGHT)로도 전체
+            // 줄 수를 못 담으면, 억지로 꽉 채우기를 포기하고 읽을 수 있는 고정 크기로
+            // 표시한 뒤 부모 컨테이너가 스크롤되게 둔다 — "꽉 채우려다 겹치거나 아예
+            // 안 보이는 것"보다 "스크롤해서라도 다 보이는 것"이 항상 낫다.
+            const bestRows = Math.ceil(count / bestCols);
+            const fillHeight = (bestRows * MIN_PARTICIPANT_ROW_HEIGHT) <= ch;
+
+            applyParticipantGrid(el, bestCols, count, { fillHeight });
+            el.style.fontSize = (fillHeight ? bestSize : 18) + 'px';
 
             // fitTextToBox의 이분 탐색은 오차 허용(+1px)이 있어서, 다른 이름보다 살짝
-            // 더 긴 이름 하나만 경계선에서 놓치는 경우가 드물게 생긴다. 최종 확정된
-            // 글씨 크기에서 "정말로 하나도 안 잘리는지" 오차 없이 다시 검사해서, 잘리는
-            // 이름이 하나라도 있으면 다 맞을 때까지 1px씩 더 줄인다.
+            // 더 긴 이름 하나만 경계선에서 놓치는 경우가 드물게 생긴다(스크롤 모드에서도
+            // 고정 크기가 폭에는 안 맞을 수 있어 마찬가지로 필요하다). 최종 확정된 글씨
+            // 크기에서 "정말로 하나도 안 잘리는지" 오차 없이 다시 검사해서, 잘리는 이름이
+            // 하나라도 있으면 다 맞을 때까지 1px씩 더 줄인다.
             const nameSpans = [...el.querySelectorAll('li span')];
-            let size = bestSize;
+            let size = parseFloat(el.style.fontSize);
             while (size > 10 && nameSpans.some(span => span.scrollWidth > span.clientWidth)) {
                 size -= 1;
                 el.style.fontSize = size + 'px';
