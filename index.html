@@ -121,50 +121,37 @@
                 box-shadow: 0 -10px 40px rgba(0,0,0,0.35);
             }
         }
+
+        /* 히스토리 & 통계도 활동 중엔 상시 노출이 필요 없어 설정 서랍과 같은 방식으로
+           동작한다 — 다만 반대쪽인 화면 왼쪽에서 슬라이드되어 나온다. */
+        .history-drawer { display: none; }
+        .history-drawer.sheet-open {
+            display: flex !important;
+            flex-direction: column;
+            position: fixed;
+            top: 0; left: 0; bottom: 0;
+            width: 100%; max-width: 380px;
+            z-index: 96;
+            border-radius: 0;
+            box-shadow: 10px 0 40px rgba(0,0,0,0.35);
+        }
+        @media (max-width: 1023px) {
+            .history-drawer.sheet-open {
+                top: 4vh; left: 0; right: 0; max-width: 100%; max-height: 96vh;
+                border-radius: 1.5rem 1.5rem 0 0;
+                box-shadow: 0 -10px 40px rgba(0,0,0,0.35);
+            }
+        }
     </style>
 </head>
 <body class="has-mobile-layout pattern-dots min-h-screen flex items-center justify-center p-3 lg:p-6 overflow-hidden">
 
     <!-- PC 최적화 3단 그리드 레이아웃 (모바일에서는 홈 화면 + 바텀시트로 전환) -->
     <div class="app-shell w-full max-w-[1600px] h-[85vh] min-h-[700px] grid grid-cols-1 lg:grid-cols-12 gap-6 relative lg:z-10 pb-20 lg:pb-0">
-
-        <!-- ==========================================
-             [1] 왼쪽 패널: 히스토리 & 통계
-             ========================================== -->
-        <aside id="history-panel" class="mobile-sheet lg:flex lg:col-span-3 bg-white dark:bg-slate-800 rounded-3xl shadow-2xl flex-col border border-slate-200 dark:border-slate-700 overflow-hidden transition-colors">
-            <div class="p-5 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/80">
-                <h2 class="text-lg font-bold text-slate-800 dark:text-white"><i class="fa-solid fa-chart-column mr-2 text-theme"></i>히스토리 & 통계</h2>
-                <div class="flex items-center gap-1">
-                    <button id="clear-history" class="text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 px-2 py-1 rounded transition-colors" title="기록 전체 삭제">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-                    <button class="mobile-sheet-close lg:hidden text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 w-8 h-8 rounded-full flex items-center justify-center transition-colors" title="닫기">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
-                </div>
-            </div>
-            
-            <div class="flex-1 overflow-y-auto flex flex-col p-5">
-                <!-- 날짜 선택 -->
-                <div class="mb-4 shrink-0">
-                    <h3 class="text-xs font-bold text-slate-400 dark:text-slate-500 mb-3 uppercase tracking-wider">날짜별 확인</h3>
-                    <input type="date" id="history-date-filter" class="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus-ring-theme text-sm text-slate-700 dark:text-slate-200">
-                </div>
-
-                <!-- 히스토리 목록 -->
-                <div class="flex-1 flex flex-col min-h-0">
-                    <h3 class="text-xs font-bold text-slate-400 dark:text-slate-500 mb-3 uppercase tracking-wider">타임라인</h3>
-                    <ul id="history-list" class="space-y-3 flex-1 overflow-y-auto pr-2 pb-2">
-                        <!-- 동적 렌더링 -->
-                    </ul>
-                </div>
-            </div>
-        </aside>
-
         <!-- ==========================================
              [2] 중앙 패널: 메인 뽑기 영역 
              ========================================== -->
-        <main class="lg:col-span-9 bg-white dark:bg-slate-800 rounded-3xl shadow-2xl flex flex-col border border-slate-200 dark:border-slate-700 overflow-hidden transition-colors relative">
+        <main class="lg:col-span-12 bg-white dark:bg-slate-800 rounded-3xl shadow-2xl flex flex-col border border-slate-200 dark:border-slate-700 overflow-hidden transition-colors relative">
 
             <!-- Hero Header -->
             <header class="relative flex-1 lg:flex-none flex flex-col items-center justify-center bg-theme-gradient p-8 text-center transition-all overflow-hidden">
@@ -256,6 +243,40 @@
             </div>
         </main>
     </div>
+
+        <!-- ==========================================
+             [1] 왼쪽 패널: 히스토리 & 통계
+             ========================================== -->
+        <aside id="history-panel" class="history-drawer bg-white dark:bg-slate-800 shadow-2xl border-r border-slate-200 dark:border-slate-700 overflow-hidden transition-colors">
+            <div class="p-5 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/80">
+                <h2 class="text-lg font-bold text-slate-800 dark:text-white"><i class="fa-solid fa-chart-column mr-2 text-theme"></i>히스토리 & 통계</h2>
+                <div class="flex items-center gap-1">
+                    <button id="clear-history" class="text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 px-2 py-1 rounded transition-colors" title="기록 전체 삭제">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                    <button class="mobile-sheet-close text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 w-8 h-8 rounded-full flex items-center justify-center transition-colors" title="닫기">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto flex flex-col p-5">
+                <!-- 날짜 선택 -->
+                <div class="mb-4 shrink-0">
+                    <h3 class="text-xs font-bold text-slate-400 dark:text-slate-500 mb-3 uppercase tracking-wider">날짜별 확인</h3>
+                    <input type="date" id="history-date-filter" class="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus-ring-theme text-sm text-slate-700 dark:text-slate-200">
+                </div>
+
+                <!-- 히스토리 목록 -->
+                <div class="flex-1 flex flex-col min-h-0">
+                    <h3 class="text-xs font-bold text-slate-400 dark:text-slate-500 mb-3 uppercase tracking-wider">타임라인</h3>
+                    <ul id="history-list" class="space-y-3 flex-1 overflow-y-auto pr-2 pb-2">
+                        <!-- 동적 렌더링 -->
+                    </ul>
+                </div>
+            </div>
+        </aside>
+
 
         <!-- ==========================================
              [3] 오른쪽 패널: 커스터마이징 & 설정 
@@ -370,6 +391,11 @@
     <!-- 데스크톱 전용 설정 열기 버튼 (활동 중엔 필요 없어 평소엔 숨겨진 설정 서랍을 연다) -->
     <button id="desktop-settings-btn" class="hidden lg:flex fixed top-6 right-6 z-[80] w-12 h-12 rounded-full bg-white dark:bg-slate-800 shadow-xl border border-slate-200 dark:border-slate-700 items-center justify-center text-slate-500 hover:text-theme transition-colors" title="테마 & 설정">
         <i class="fa-solid fa-gear text-lg"></i>
+    </button>
+
+    <!-- 데스크톱 전용 히스토리 열기 버튼 (활동 중엔 상시 노출이 필요 없어 평소엔 숨겨진 서랍을 연다) -->
+    <button id="desktop-history-btn" class="hidden lg:flex fixed top-6 left-6 z-[80] w-12 h-12 rounded-full bg-white dark:bg-slate-800 shadow-xl border border-slate-200 dark:border-slate-700 items-center justify-center text-slate-500 hover:text-theme transition-colors" title="히스토리 & 통계">
+        <i class="fa-solid fa-chart-column text-lg"></i>
     </button>
 
     <!-- 모바일 하단 탭바 -->
@@ -921,6 +947,12 @@
             else openMobileSheet('settings-panel');
         });
 
+        // 히스토리 & 통계도 같은 이유(활동 중엔 상시 노출 불필요)로 데스크톱에서도 서랍으로 뺐다.
+        document.getElementById('desktop-history-btn').addEventListener('click', () => {
+            if (document.getElementById('history-panel').classList.contains('sheet-open')) closeMobileSheets();
+            else openMobileSheet('history-panel');
+        });
+
         // --- 6. 메인 앱 로직 (참가자 관리) ---
         let sortableInstance = null;
 
@@ -995,7 +1027,7 @@
             // 이름을 참조하게 되어 엉뚱한 사람이 바뀌는 문제가 생긴다.
             dom.abilityModalList.innerHTML = state.participants.map((p, idx) => `
                     <li class="flex items-center justify-between gap-2 bg-slate-50 dark:bg-slate-900 p-3 rounded-xl">
-                        <input type="text" data-index="${idx}" class="name-edit-input font-bold text-slate-700 dark:text-slate-200 bg-transparent border-b border-transparent hover:border-slate-300 dark:hover:border-slate-600 focus:border-theme focus:outline-none px-0.5 py-0.5 min-w-0 flex-1" value="${escapeHtml(p.name)}" title="이름 수정">
+                        <input type="text" data-index="${idx}" class="name-edit-input text-sm font-bold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 focus:outline-none focus-ring-theme text-slate-700 dark:text-slate-200 min-w-0 flex-1" value="${escapeHtml(p.name)}" title="이름 수정">
                         <div class="flex items-center gap-2 shrink-0">
                             <select data-index="${idx}" class="gender-select text-sm font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 focus:outline-none focus-ring-theme text-slate-700 dark:text-slate-200">
                                 <option value="" ${!p.gender ? 'selected' : ''}>미지정</option>
