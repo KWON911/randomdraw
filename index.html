@@ -122,26 +122,6 @@
             }
         }
 
-        /* 히스토리 & 통계도 활동 중엔 상시 노출이 필요 없어 설정 서랍과 같은 방식으로
-           동작한다 — 다만 반대쪽인 화면 왼쪽에서 슬라이드되어 나온다. */
-        .history-drawer { display: none; }
-        .history-drawer.sheet-open {
-            display: flex !important;
-            flex-direction: column;
-            position: fixed;
-            top: 0; left: 0; bottom: 0;
-            width: 100%; max-width: 380px;
-            z-index: 96;
-            border-radius: 0;
-            box-shadow: 10px 0 40px rgba(0,0,0,0.35);
-        }
-        @media (max-width: 1023px) {
-            .history-drawer.sheet-open {
-                top: 4vh; left: 0; right: 0; max-width: 100%; max-height: 96vh;
-                border-radius: 1.5rem 1.5rem 0 0;
-                box-shadow: 0 -10px 40px rgba(0,0,0,0.35);
-            }
-        }
     </style>
 </head>
 <body class="has-mobile-layout pattern-dots min-h-screen flex items-center justify-center p-3 lg:p-6 overflow-hidden">
@@ -236,6 +216,9 @@
                             <option value="alternate">번갈아가며</option>
                             <option value="team">팀 나누기</option>
                         </select>
+                        <button id="desktop-drawer-btn" class="w-12 h-12 rounded-xl bg-theme text-white flex items-center justify-center transition-transform hover:scale-105 active:scale-95 shadow-md shrink-0" title="히스토리 & 통계 / 테마 & 설정">
+                            <i class="fa-solid fa-gear text-lg"></i>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -243,22 +226,27 @@
     </div>
 
         <!-- ==========================================
-             [1] 왼쪽 패널: 히스토리 & 통계
+             오른쪽 서랍: 히스토리 & 통계 / 테마 & 설정을 탭으로 통합
+             (활동 중엔 필요 없어 톱니바퀴 버튼 하나로만 여닫는다)
              ========================================== -->
-        <aside id="history-panel" class="history-drawer bg-white dark:bg-slate-800 shadow-2xl border-r border-slate-200 dark:border-slate-700 overflow-hidden transition-colors">
-            <div class="p-5 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/80">
-                <h2 class="text-lg font-bold text-slate-800 dark:text-white"><i class="fa-solid fa-chart-column mr-2 text-theme"></i>히스토리 & 통계</h2>
-                <div class="flex items-center gap-1">
+        <aside id="side-drawer" class="settings-drawer bg-white dark:bg-slate-800 shadow-2xl border-l border-slate-200 dark:border-slate-700 overflow-hidden transition-colors">
+            <div class="p-3 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/80 shrink-0">
+                <div class="flex gap-1">
+                    <button type="button" data-drawer-tab="history" class="side-drawer-tab-btn px-3 py-2 rounded-lg font-bold text-sm transition-colors"><i class="fa-solid fa-chart-column mr-1.5"></i>히스토리 & 통계</button>
+                    <button type="button" data-drawer-tab="settings" class="side-drawer-tab-btn px-3 py-2 rounded-lg font-bold text-sm transition-colors"><i class="fa-solid fa-palette mr-1.5"></i>테마 & 설정</button>
+                </div>
+                <button class="mobile-sheet-close text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 w-8 h-8 rounded-full flex items-center justify-center transition-colors shrink-0" title="닫기">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- 히스토리 & 통계 탭 -->
+            <div id="drawer-tab-history" class="hidden flex-1 overflow-y-auto flex flex-col p-5">
+                <div class="flex justify-end mb-2 shrink-0">
                     <button id="clear-history" class="text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 px-2 py-1 rounded transition-colors" title="기록 전체 삭제">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-                    <button class="mobile-sheet-close text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 w-8 h-8 rounded-full flex items-center justify-center transition-colors" title="닫기">
-                        <i class="fa-solid fa-xmark"></i>
+                        <i class="fa-solid fa-trash mr-1"></i>전체 삭제
                     </button>
                 </div>
-            </div>
-            
-            <div class="flex-1 overflow-y-auto flex flex-col p-5">
                 <!-- 날짜 선택 -->
                 <div class="mb-4 shrink-0">
                     <h3 class="text-xs font-bold text-slate-400 dark:text-slate-500 mb-3 uppercase tracking-wider">날짜별 확인</h3>
@@ -273,21 +261,9 @@
                     </ul>
                 </div>
             </div>
-        </aside>
 
-
-        <!-- ==========================================
-             [3] 오른쪽 패널: 커스터마이징 & 설정 
-             ========================================== -->
-        <aside id="settings-panel" class="settings-drawer bg-white dark:bg-slate-800 shadow-2xl border-l border-slate-200 dark:border-slate-700 overflow-hidden transition-colors">
-            <div class="p-5 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/80">
-                <h2 class="text-lg font-bold text-slate-800 dark:text-white"><i class="fa-solid fa-palette mr-2 text-theme"></i>테마 & 설정</h2>
-                <button class="mobile-sheet-close text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 w-8 h-8 rounded-full flex items-center justify-center transition-colors" title="닫기">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-
-            <div class="flex-1 overflow-y-auto p-6 space-y-7 text-sm text-slate-700 dark:text-slate-300">
+            <!-- 테마 & 설정 탭 -->
+            <div id="drawer-tab-settings" class="hidden flex-1 overflow-y-auto p-6 space-y-7 text-sm text-slate-700 dark:text-slate-300">
 
                 <!-- 명단 관리 도구 (활동 중에는 필요 없어 참가자 화면에서 이리로 옮김) -->
                 <div class="space-y-3">
@@ -386,27 +362,17 @@
     <!-- 모바일 바텀시트 배경 -->
     <div id="mobile-sheet-backdrop" class="mobile-sheet-backdrop"></div>
 
-    <!-- 데스크톱 전용 설정 열기 버튼 (활동 중엔 필요 없어 평소엔 숨겨진 설정 서랍을 연다) -->
-    <button id="desktop-settings-btn" class="hidden lg:flex fixed top-6 right-6 z-[80] w-12 h-12 rounded-full bg-white dark:bg-slate-800 shadow-xl border border-slate-200 dark:border-slate-700 items-center justify-center text-slate-500 hover:text-theme transition-colors" title="테마 & 설정">
-        <i class="fa-solid fa-gear text-lg"></i>
-    </button>
-
-    <!-- 데스크톱 전용 히스토리 열기 버튼 (활동 중엔 상시 노출이 필요 없어 평소엔 숨겨진 서랍을 연다) -->
-    <button id="desktop-history-btn" class="hidden lg:flex fixed top-6 left-6 z-[80] w-12 h-12 rounded-full bg-white dark:bg-slate-800 shadow-xl border border-slate-200 dark:border-slate-700 items-center justify-center text-slate-500 hover:text-theme transition-colors" title="히스토리 & 통계">
-        <i class="fa-solid fa-chart-column text-lg"></i>
-    </button>
-
     <!-- 모바일 하단 탭바 -->
     <nav id="mobile-tabbar" class="lg:hidden fixed bottom-0 inset-x-0 z-[95] bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 flex items-stretch h-16">
         <button data-target="participant-sheet" class="mobile-tab-btn flex-1 flex flex-col items-center justify-center gap-0.5 text-slate-600 dark:text-slate-300 active:bg-slate-100 dark:active:bg-slate-700 transition-colors">
             <i class="fa-solid fa-list-ul text-lg"></i>
             <span class="text-[11px] font-semibold">명단</span>
         </button>
-        <button data-target="history-panel" class="mobile-tab-btn flex-1 flex flex-col items-center justify-center gap-0.5 text-slate-600 dark:text-slate-300 active:bg-slate-100 dark:active:bg-slate-700 transition-colors">
+        <button data-target="side-drawer" data-drawer-tab="history" class="mobile-tab-btn flex-1 flex flex-col items-center justify-center gap-0.5 text-slate-600 dark:text-slate-300 active:bg-slate-100 dark:active:bg-slate-700 transition-colors">
             <i class="fa-solid fa-clock-rotate-left text-lg"></i>
             <span class="text-[11px] font-semibold">히스토리</span>
         </button>
-        <button data-target="settings-panel" class="mobile-tab-btn flex-1 flex flex-col items-center justify-center gap-0.5 text-slate-600 dark:text-slate-300 active:bg-slate-100 dark:active:bg-slate-700 transition-colors">
+        <button data-target="side-drawer" data-drawer-tab="settings" class="mobile-tab-btn flex-1 flex flex-col items-center justify-center gap-0.5 text-slate-600 dark:text-slate-300 active:bg-slate-100 dark:active:bg-slate-700 transition-colors">
             <i class="fa-solid fa-palette text-lg"></i>
             <span class="text-[11px] font-semibold">설정</span>
         </button>
@@ -944,7 +910,7 @@
 
         // --- 5-1. 모바일 바텀시트 내비게이션 ---
         const mobileSheetBackdrop = document.getElementById('mobile-sheet-backdrop');
-        const mobileSheetIds = ['participant-sheet', 'history-panel', 'settings-panel'];
+        const mobileSheetIds = ['participant-sheet', 'side-drawer'];
         const mobileTabBtns = document.querySelectorAll('.mobile-tab-btn');
 
         const setActiveTab = (openId) => {
@@ -971,6 +937,7 @@
         mobileTabBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 const id = btn.dataset.target;
+                if (btn.dataset.drawerTab) switchDrawerTab(btn.dataset.drawerTab);
                 if (document.getElementById(id).classList.contains('sheet-open')) closeMobileSheets();
                 else openMobileSheet(id);
             });
@@ -982,17 +949,28 @@
 
         mobileSheetBackdrop.addEventListener('click', closeMobileSheets);
 
-        // 데스크톱에서도 설정 패널은 항상 떠 있는 3번째 칼럼이 아니라, 이 버튼으로만 여는
-        // 오버레이 서랍이다(모바일 바텀시트와 같은 open/close 메커니즘을 그대로 재사용한다).
-        document.getElementById('desktop-settings-btn').addEventListener('click', () => {
-            if (document.getElementById('settings-panel').classList.contains('sheet-open')) closeMobileSheets();
-            else openMobileSheet('settings-panel');
+        // 히스토리 & 통계 / 테마 & 설정을 한 서랍 안에 탭으로 합쳤다 — 둘 다 활동 중엔
+        // 상시 노출이 필요 없어서, 톱니바퀴 버튼 하나로만 여닫는 오버레이 서랍으로 뺐다.
+        const drawerTabBtns = document.querySelectorAll('.side-drawer-tab-btn');
+        const switchDrawerTab = (tab) => {
+            document.getElementById('drawer-tab-history').classList.toggle('hidden', tab !== 'history');
+            document.getElementById('drawer-tab-settings').classList.toggle('hidden', tab !== 'settings');
+            drawerTabBtns.forEach(btn => {
+                const active = btn.dataset.drawerTab === tab;
+                btn.classList.toggle('bg-theme', active);
+                btn.classList.toggle('text-white', active);
+                btn.classList.toggle('text-slate-500', !active);
+                btn.classList.toggle('dark:text-slate-400', !active);
+            });
+        };
+        drawerTabBtns.forEach(btn => {
+            btn.addEventListener('click', () => switchDrawerTab(btn.dataset.drawerTab));
         });
+        switchDrawerTab('settings'); // 기본으로 보여줄 탭(톱니바퀴 아이콘과 맞춤)
 
-        // 히스토리 & 통계도 같은 이유(활동 중엔 상시 노출 불필요)로 데스크톱에서도 서랍으로 뺐다.
-        document.getElementById('desktop-history-btn').addEventListener('click', () => {
-            if (document.getElementById('history-panel').classList.contains('sheet-open')) closeMobileSheets();
-            else openMobileSheet('history-panel');
+        document.getElementById('desktop-drawer-btn').addEventListener('click', () => {
+            if (document.getElementById('side-drawer').classList.contains('sheet-open')) closeMobileSheets();
+            else openMobileSheet('side-drawer');
         });
 
         // --- 6. 메인 앱 로직 (참가자 관리) ---
