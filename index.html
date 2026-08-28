@@ -1643,25 +1643,31 @@
                 }
             }
 
-            // 화면이 너무 작아서 최소 한 줄 높이(MIN_PARTICIPANT_ROW_HEIGHT)로도 전체
-            // 줄 수를 못 담으면, 억지로 꽉 채우기를 포기하고 읽을 수 있는 고정 크기로
-            // 표시한 뒤 부모 컨테이너가 스크롤되게 둔다 — "꽉 채우려다 겹치거나 아예
-            // 안 보이는 것"보다 "스크롤해서라도 다 보이는 것"이 항상 낫다.
-            const bestRows = Math.ceil(count / bestCols);
-            const fillHeight = (bestRows * MIN_PARTICIPANT_ROW_HEIGHT) <= ch;
-
-            applyParticipantGrid(el, bestCols, count, { fillHeight });
-            el.style.fontSize = (fillHeight ? bestSize : 18) + 'px';
+            // "꽉 채워서 스크롤 없이 다 보이게 할지"를 미리 계산(추정)으로 정하면, 이
+            // 페이지가 놓인 환경에 따라 실제 보이는 높이와 추정치가 어긋날 수 있다(예:
+            // 브라우저 chrome, 임베디드 미리보기 등). 그래서 먼저 "자연스러운 높이"로
+            // 실제 렌더링해 진짜 얼마나 넘치는지 측정한 다음에, 정말 안전하게 들어갈 때만
+            // 꽉 채우기로 전환한다 — 추정이 아니라 실측을 기준으로 판단한다.
+            applyParticipantGrid(el, bestCols, count, { fillHeight: false });
+            el.style.fontSize = bestSize + 'px';
 
             // fitTextToBox의 이분 탐색은 오차 허용(+1px)이 있어서, 다른 이름보다 살짝
-            // 더 긴 이름 하나만 경계선에서 놓치는 경우가 드물게 생긴다(스크롤 모드에서도
-            // 고정 크기가 폭에는 안 맞을 수 있어 마찬가지로 필요하다). 최종 확정된 글씨
-            // 크기에서 "정말로 하나도 안 잘리는지" 오차 없이 다시 검사해서, 잘리는 이름이
-            // 하나라도 있으면 다 맞을 때까지 1px씩 더 줄인다.
+            // 더 긴 이름 하나만 경계선에서 놓치는 경우가 드물게 생긴다. 최종 확정된
+            // 글씨 크기에서 "정말로 하나도 안 잘리는지" 오차 없이 다시 검사해서, 잘리는
+            // 이름이 하나라도 있으면 다 맞을 때까지 1px씩 더 줄인다.
             const nameSpans = [...el.querySelectorAll('li span')];
-            let size = parseFloat(el.style.fontSize);
+            let size = bestSize;
             while (size > 10 && nameSpans.some(span => span.scrollWidth > span.clientWidth)) {
                 size -= 1;
+                el.style.fontSize = size + 'px';
+            }
+
+            // 자연스러운 높이로 렌더링된 실제 결과를 측정해서, 컨테이너보다 작거나
+            // 같으면(여유 있게 안전 마진 10%까지 감안) 꽉 채우기 모드로 전환한다.
+            // 안 그러면(스크롤이 필요한 상황) 방금 그대로(auto 높이, 스크롤 가능)를 둔다.
+            const naturalHeight = el.scrollHeight;
+            if (naturalHeight <= ch * 0.98) {
+                applyParticipantGrid(el, bestCols, count, { fillHeight: true });
                 el.style.fontSize = size + 'px';
             }
         };
