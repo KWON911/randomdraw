@@ -85,8 +85,10 @@
             .mobile-sheet.sheet-open {
                 display: flex !important;
                 position: fixed;
-                left: 0; right: 0; bottom: 0; top: 4vh;
-                max-height: 96vh;
+                /* bottom을 0이 아니라 하단 탭바 높이(h-16=4rem)만큼 띄워서, 탭바(z-index가
+                   더 높음)가 시트 맨 아래 내용을 가리지 않게 한다. */
+                left: 0; right: 0; bottom: 4rem; top: 4vh;
+                max-height: calc(96vh - 4rem);
                 z-index: 90;
                 border-radius: 1.5rem 1.5rem 0 0 !important;
                 box-shadow: 0 -10px 40px rgba(0,0,0,0.35);
